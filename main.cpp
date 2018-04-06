@@ -1,47 +1,37 @@
-#include <CkSpider.h>
 #include <iostream>
+#include <thread>
+#include <fstream>
+#include <vector>
 
-void ChilkatSample(void)
-{
-	CkSpider spider;
+#include "spider.h"
 
-    //  The spider object crawls a single web site at a time.  As you'll see
-    //  in later examples, you can collect outbound links and use them to
-    //  crawl the web.  For now, we'll simply spider 10 pages of chilkatsoft.com
-	spider.Initialize("www.chilkatsoft.com");
+#define DEBUG
 
-    //  Add the 1st URL:
-	spider.AddUnspidered("http://www.chilkatsoft.com/");
+#define STATE_FILE_NAME "save_state.sav"
+#define LOG_FILE "log_file.txt"
 
-    //  Begin crawling the site by calling CrawlNext repeatedly.
-	int i;
-	for (i = 0; i <= 9; i++) {
-		bool success;
-		success = spider.CrawlNext();
-		if (success == true) {
-            //  Show the URL of the page just spidered.
-			std::cout << spider.lastUrl() << "\r\n";
-            //  The HTML is available in the LastHtml property
-		}
-		else {
-            //  Did we get an error or are there no more URLs to crawl?
-			if (spider.get_NumUnspidered() == 0) {
-				std::cout << "No more URLs to spider" << "\r\n";
-			}
-			else {
-				std::cout << spider.lastErrorText() << "\r\n";
-			}
+// struct name_t {
+// 	/* data */
+// };
 
-		}
+int main() {
+	// try to open the LOG_FILE
+	// std::ofstream log_file;
+	// log_file.open(LOG_FILE);
+	//
+	// if (!log_file.is_open()) {
+	// 	std::cout << "Cannot open log file" << '\n';
+	// 	return -1;
+	// }
+	//
+	// log_file.close();
 
-        //  Sleep 1 second before spidering the next URL.
-		spider.SleepMs(1000);
-	}
+	Spider spider("https://www.uol.com.br/");
+	spider.crawl();
+	// std::cout << spider.getHtml() << '\n';
+	auto test = spider.getUnspideredUrls();
+	for (auto x : test)
+		std::cout << x << '\n';
 
-}
-
-int main(int argc, char const *argv[])
-{
-	ChilkatSample();
 	return 0;
 }
