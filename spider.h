@@ -2,6 +2,7 @@
 #define SPIDER_H
 #include <CkSpider.h>
 #include <CkString.h>
+#include <CkUrl.h>
 
 #include <iostream>
 
@@ -11,10 +12,16 @@
 
 #include <algorithm> // sort
 
+#include <functional> // hash
+
+#include "utils.h"
+
 #define DEBUG
 
-#define MAX_RESPONSE_SIZE 4096
-//  Max of 4MB
+// Max of 2MB
+#define MAX_RESPONSE_SIZE 2097152
+// Evitar URLs com mais de 7 palavras.
+#define MAX_DEPTH 7
 
 class Spider {
 private:
@@ -23,21 +30,32 @@ private:
   CkString url;
   CkString domain;
   CkString base_domain;
+  int depth;
+
   std::queue<std::string> queue;
 
 public:
   Spider(std::string);
   virtual ~Spider();
 
-  void crawl();
-  std::vector<std::string> getOutboundLinks();
-  void ClearOutboundLinks();
+  void setUrl(std::string);
 
+  bool crawl();
+  std::vector<std::string> getSpideredUrls();
   std::vector<std::string> getUnspideredUrls();
+  std::vector<std::string> getOutboundLinks();
+
+  void updateInfo();
+  void removeUnspideredByDepth(int);
+  void AddUnspidered(std::string);
+
+  void printStatus();
+  void printLinks();
 
   std::string getUrl();
   std::string getHtml();
 
-  void playground();
+  unsigned long long getUniqueId();
+
 };
 #endif
