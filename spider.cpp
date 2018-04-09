@@ -176,3 +176,22 @@ unsigned long long Spider::getUniqueId() {
 
   return id_hash;
 };
+
+void Spider::init() {
+  std::vector<std::thread> vec_thr;
+
+  while (this->crawl()) {
+    this->removeUnspideredByDepth(MAX_DEPTH);
+    this->printStatus();
+    this->printLinks();
+
+    for (auto out_link : this->getOutboundLinks()) {
+      if (countDepth(out_link) <= MAX_DEPTH) {
+        Spider s_aux(out_link);
+        vec_thr.emplace_back(&Spider::init, std::move(s_aux));
+      }
+    }
+    for (auto &t : vec_thr) { t.join(); }
+    sleep(1);
+  };
+};

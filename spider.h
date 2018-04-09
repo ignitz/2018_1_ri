@@ -9,10 +9,11 @@
 #include <queue>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include <algorithm> // sort
-
 #include <functional> // hash
+#include <unistd.h> // sleep
 
 #include "utils.h"
 
@@ -56,6 +57,8 @@ public:
   std::string getHtml();
 
   unsigned long long getUniqueId();
+
+  void init();
 
 };
 #endif
