@@ -1,7 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <thread>
-#include <vector>
 
 #include "spider.h"
 
@@ -10,98 +8,126 @@
 #define STATE_FILE_NAME "save_state.sav"
 #define LOG_FILE "log_file.txt"
 
-// struct name_t {
-// 	/* data */
-// };
-// #include <functional>
 #include <string>
 #include <unistd.h>
 
-#include <mutex>
 #include <deque>
-#include <future>
 #include <functional>
+#include <future>
+#include <mutex>
 
+#include <condition_variable>
+#include <functional>
+#include <queue>
+#include <thread>
+#include <vector>
 
-std::mutex mu;
-std::deque<std::packaged_task<int()> > task_q;
+#include <future>
 
-using namespace std;
+class ThreadPool {
+public:
+  using Task = std::function<void()>;
 
-int factorial(int N) {
-	int res = 1;
-	for (int i=N; i>1; i--)
-		res *= i;
+  explicit ThreadPool(std::size_t numThreads) { start(numThreads); };
+  ~ThreadPool() { stop(); };
 
-	return res;
-};
+  template <class T> auto enqueue(T task) -> std::future<decltype(task())> {
+    auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(
+        std::move(task));
+    {
+      std::unique_lock<std::mutex> lock{mEventMutex};
+      mTasks.emplace([=] { (*wrapper)(); });
+    }
 
-void thread_1() {
-	for (int i=0; i<10000; i++) {
-		std::packaged_task<int()> t;
-		{
-			std::lock_guard<std::mutex> locker(mu);
-			if (task_q.empty())
-				continue;
-			t = std::move(task_q.front());
-			task_q.pop_front();
-		}
-		t();
-	}
-};
+    mEventVar.notify_one();
+    return wrapper->get_future();
+  }
 
-void test_thread() {
-  // const std::string initial_url = "http://homepages.dcc.ufmg.br/~berthier/";
-  // Spider s1(initial_url);
-  // std::vector<std::thread> vec_thr;
+private:
+  std::vector<std::thread> mThreads;
 
-	std::thread th(thread_1);
+  std::condition_variable mEventVar;
 
-	std::packaged_task<int()> t(bind(factorial, 6));
-	std::future<int> ret = t.get_future();
-	std::packaged_task<int()> t2(bind(factorial, 9));
-	std::future<int> ret2 = t2.get_future();
-	{
-		std::lock_guard<std::mutex> locker(mu);
-		task_q.push_back(std::move(t));
-		task_q.push_back(std::move(t2));
-	}
-	cout << "I see: " << ret.get() << endl;
-	cout << "I see: " << ret2.get() << endl;
+  std::mutex mEventMutex;
+  bool mStopping = false;
 
-	th.join();
+  std::queue<Task> mTasks;
 
-  // pass the constructor parameters you would have passed to std::thread
-  // to the emplace_back() function - they are forwarded to the thread that
-  // is constructed "in place" inside the vector
-  // vec_thr.emplace_back(&Spider::init, &s1);
-	// // vec_thr.push_back(std::move(t1), str);
-	//
-  // // Don't forget to join all your threads to make sure
-  // // they complete before moving on/exiting
-  // for (auto &t : vec_thr) {
-	// 		t.join();
-	// }
-};
+  void start(std::size_t numThreads) {
+    for (std::size_t i = 0; i < numThreads; ++i) {
+      // The [=] you're referring to is part of the capture list for the
+      // lambda expression. This tells C++ that the code inside the lambda
+      // expression is initialized so that the lambda gets a copy of all the
+      // local variables it uses when it's created. This is necessary for
+      // the lambda expression to be able to refer to  factor and offset,
+      // which are local variables inside the function.
 
-void manage() {
-  // Spider spider("http://homepages.dcc.ufmg.br/~berthier/");
-  // Spider
-  // spider("http://homepages.dcc.ufmg.br/~berthier/short_biography.htm");
-  Spider spider("https://www.uol.com.br/");
-  // Spider spider("https://gizmodo.uol.com.br/");
-  // Spider spider("http://gizmodo.uol.com.br");
+      // If you replace the [=] with [], you'll get a compiler error because
+      // the code inside the lambda expression won't know what the variables
+      // offset and factor refer to. Many compilers give good diagnostic
+      // error messages if you do this, so try it and see what happens!
+      mThreads.emplace_back([=] {
+        while (true) {
+          Task task;
+          {
+            std::unique_lock<std::mutex> lock{mEventMutex};
 
-  while (spider.crawl()) {
-    spider.removeUnspideredByDepth(MAX_DEPTH);
-    spider.printStatus();
-    spider.printLinks();
-    sleep(1);
+            mEventVar.wait(lock, [=] { return mStopping || !mTasks.empty(); });
+
+            if (mStopping && mTasks.empty())
+              break;
+
+            task = std::move(mTasks.front());
+            mTasks.pop();
+          }
+          task();
+        }
+      });
+    }
   };
+  void stop() noexcept {
+    {
+      std::unique_lock<std::mutex> lock{mEventMutex};
+      mStopping = true;
+    }
+
+    mEventVar.notify_all();
+
+    for (auto &thread : mThreads)
+      thread.join();
+  }
 };
 
 int main() {
-  test_thread();
-  // manage();
+	std::string url("http://homepages.dcc.ufmg.br/~berthier/");
+  {
+    ThreadPool pool(36);
+
+		auto outbound_links = pool.enqueue([&url] {
+			Spider spider(url);
+			while(spider.crawl()){
+				spider.printStatus();
+			};
+			return spider.getOutboundLinks();
+		});
+
+		for(auto &x : outbound_links.get()) {
+			pool.enqueue([&x] {
+				Spider spider(x);
+				while(spider.crawl()){
+					spider.printStatus();
+				};
+				return 0;
+			});
+		}
+			// std::cout << x << '\n';
+
+    // auto f1 = pool.enqueue([] { return 1; });
+		//
+    // auto f2 = pool.enqueue([] { return 2; });
+		//
+    // std::cout << (f1.get() + f2.get()) << std::endl;
+  }
+
   return 0;
 }
