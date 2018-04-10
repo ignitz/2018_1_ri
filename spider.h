@@ -56,6 +56,7 @@ public:
 
   std::string getUrl();
   std::string getHost();
+  std::string getBaseDomain();
   std::string getHtml();
 
   unsigned long long getUniqueId();

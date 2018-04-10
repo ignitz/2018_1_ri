@@ -18,3 +18,17 @@ int countDepth(std::string url) {
 
   return result;
 };
+
+std::string getBaseDomain(std::string url) {
+  CkSpider util;
+  // return std::string(util.canonicalizeUrl(util.getBaseDomain(util.getUrlDomain(url.c_str()))));
+  return std::string(util.getBaseDomain(util.getUrlDomain(url.c_str())));
+};
+
+bool check_if_not_BR(std::string url) {
+  CkSpider util;
+  std::string domain = std::string(util.getBaseDomain(util.getUrlDomain(url.c_str())));
+  if (domain.find_last_of('.') > 0)
+    return !!domain.substr(domain.find_last_of('.'), domain.length()).compare(".br");
+  return true;
+}

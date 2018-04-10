@@ -3,7 +3,7 @@
 
 #include "spider.h"
 
-// #define ONLY_HUE_BR
+#define ONLY_HUE_BR
 
 #define STATE_FILE_NAME "save_state.sav"
 #define LOG_FILE "log_file.txt"
@@ -93,8 +93,11 @@ private:
 /*****************************************/
 
 /*****************************************/
+#define INITIAL_URL "http://uol.com.br/"
 // #define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
-#define INITIAL_URL "http://www.asist.org/about/awards/best-information-science-book-award/best-information-science-book-award-past-winners"
+// #define INITIAL_URL                                                            \
+  "http://www.asist.org/about/awards/best-information-science-book-award/"     \
+  "best-information-science-book-award-past-winners"
 
 int main() {
   std::vector<Spider *> mSpiders;
@@ -104,6 +107,8 @@ int main() {
   std::vector<std::future<std::pair<bool, std::vector<std::string>>>> mFutures;
 
   std::vector<int> indexes_to_delete;
+
+  Spider *each_spider;
 
   {
     bool isEnough = false;
@@ -115,13 +120,14 @@ int main() {
       ThreadPool pool(MAX_THREADS);
       size_t numSpiders = mSpiders.size();
       for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
-        Spider *each_spider = mSpiders[i];
-        result = pool.enqueue([&each_spider] {
+        each_spider = mSpiders[i];
+        result = pool.enqueue([=] {
           bool check_crawl = each_spider->crawl();
           each_spider->printStatus();
           // each_spider->printLinks();
+          auto vec_of_out_links = each_spider->getOutboundLinks();
           return std::pair<bool, std::vector<std::string>>(
-              check_crawl, each_spider->getOutboundLinks());
+              std::move(check_crawl), std::move(vec_of_out_links));
         });
 
         mFutures.push_back(std::move(result));
@@ -162,6 +168,10 @@ int main() {
       for (const auto &new_url : outbound_links) {
         if (countDepth(new_url) > MAX_DEPTH)
           continue;
+#ifdef ONLY_HUE_BR
+        if (check_if_not_BR(new_url))
+          continue;
+#endif
         util_url.ParseUrl(new_url.c_str());
         if (mSpiders.empty()) {
           try {
@@ -175,7 +185,8 @@ int main() {
           bool url_not_exist = true;
           auto size = mSpiders.size();
           for (size_t i = 0; i < size; i++) {
-            if (mSpiders[i]->getHost().compare(util_url.host()) == 0) {
+            if (mSpiders[i]->getBaseDomain().compare(
+                    getBaseDomain(util_url.host())) == 0) {
               mSpiders[i]->AddUnspidered(new_url);
               url_not_exist = false;
               break;

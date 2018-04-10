@@ -16,9 +16,12 @@
 #ifndef UTILS
 #define UTILS
 #include <CkUrl.h>
+#include <CkSpider.h>
 #include <string>
 #include <algorithm>
 
 // Count the depth of URL
 int countDepth(std::string);
+std::string getBaseDomain(std::string);
+bool check_if_not_BR(std::string);
 #endif

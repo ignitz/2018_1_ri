@@ -10,6 +10,8 @@ bool orderByDepth(std::string url1, std::string url2) {
   return (countDepth(url1) < countDepth(url2));
 };
 
+std::mutex spider_mutex;
+
 Spider::Spider(std::string url) {
   this->domain = this->spider.getUrlDomain(url.c_str());
   if (url.substr(0, 8).compare("https://") != 0 &&
@@ -129,9 +131,8 @@ std::vector<std::string> Spider::getUnspideredUrls() {
   return result;
 };
 
-std::mutex print_mutex;
 void Spider::printStatus() {
-  std::unique_lock<std::mutex> lock{print_mutex};
+  // std::unique_lock<std::mutex> lock{spider_mutex};
   std::cout << BOLD << "Spider Status" << '\n';
   std::cout << CYAN << "URL: " << BLUE << this->url.getString() << '\n';
   std::cout << CYAN << "Domain: " << BLUE << this->domain.getString() << '\n';
@@ -174,6 +175,10 @@ std::string Spider::getHost() {
   CkUrl util;
   util.ParseUrl(this->url.getString());
   return std::string(util.host());
+};
+
+std::string Spider::getBaseDomain(){
+  return std::string(this->base_domain.getString());
 };
 
 std::string Spider::getHtml() { return std::string(this->spider.lastHtml()); };
