@@ -5,8 +5,9 @@
 
 #define ONLY_HUE_BR
 
-#define STATE_FILE_NAME "save_state.sav"
-#define LOG_FILE "log_file.txt"
+// #define STATE_FILE_NAME "save_state.sav"
+#define UNIQUEIDs_FILE "unique_id_file.txt"
+#define OUTPUT_FILE "output_file.txt"
 #define MAX_THREADS 250
 
 #include <string>
@@ -26,6 +27,72 @@
 #include <future>
 
 #include <utility>
+
+class OutputFile {
+private:
+  std::fstream obj_file;
+
+public:
+  OutputFile (std::string file_name){
+    if (!this->obj_file.is_open())
+      // this->obj_file.open(file_name, std::fstream::app);
+      this->obj_file.open(file_name);
+  };
+  virtual ~OutputFile (){
+    this->obj_file.close();
+  };
+
+  void write(std::string url, std::string html) {
+    // find '/' and remove
+    this->obj_file << "|||" << url << '|';
+    html.erase(std::remove(html.begin(), html.end(), '|'), html.end());
+    this->obj_file << html;
+    // this->obj_file << url << '\n';
+    // html.erase(std::remove(html.begin(), html.end(), '|'), html.end());
+    // this->obj_file << html;
+  };
+
+  void write(std::string s) {
+    this->obj_file << s;
+  };
+};
+
+class CollectionID {
+private:
+  std::fstream obj_file;
+public:
+  CollectionID (){
+    if (!this->obj_file.is_open()) {
+      this->obj_file.open(UNIQUEIDs_FILE, std::fstream::in | std::fstream::out | std::fstream::app);
+      std::cout << "open" << '\n';
+    }
+
+    this->obj_file.seekg(0, this->obj_file.beg);
+    // this->obj_file.seekp(0, this->obj_file.beg);
+
+    std::string getcontent;
+
+    while(! obj_file.eof())
+    {
+      obj_file >> getcontent;
+      std::cout << getcontent << '\n';
+    }
+
+    // std::string line;
+    // std::getline(this->obj_file, line);
+    // while (std::getline(this->obj_file, line)) {
+    //   std::cout << line << '\n';
+    // }
+    // std::cout << line << '\n';
+  };
+  virtual ~CollectionID (){
+    this->obj_file.close();
+  };
+
+  void write(std::string str) {
+    this->obj_file << str;
+  }
+};
 
 /*****************************************/
 class ThreadPool {
@@ -95,24 +162,30 @@ private:
 /*****************************************/
 #define INITIAL_URL "http://uol.com.br/"
 // #define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
-// #define INITIAL_URL                                                            \
+// #define INITIAL_URL \
   "http://www.asist.org/about/awards/best-information-science-book-award/"     \
   "best-information-science-book-award-past-winners"
 
-int main() {
+int main1() {
+  OutputFile output(OUTPUT_FILE);
   std::vector<Spider *> mSpiders;
   mSpiders.push_back(new Spider(INITIAL_URL));
 
   std::vector<std::string> outbound_links;
-  std::vector<std::future<std::pair<bool, std::vector<std::string>>>> mFutures;
+  std::vector<std::future<std::tuple<bool, std::vector<std::string>,
+                                     std::string, std::string, unsigned long long>>>
+      mFutures;
 
   std::vector<int> indexes_to_delete;
 
+  // to lambda function
   Spider *each_spider;
 
   {
     bool isEnough = false;
-    std::future<std::pair<bool, std::vector<std::string>>> result;
+    std::future<std::tuple<bool, std::vector<std::string>, std::string, std::string,
+                           unsigned long long>>
+        result;
 
     int count = 0;
 
@@ -126,22 +199,39 @@ int main() {
           each_spider->printStatus();
           // each_spider->printLinks();
           auto vec_of_out_links = each_spider->getOutboundLinks();
-          return std::pair<bool, std::vector<std::string>>(
-              std::move(check_crawl), std::move(vec_of_out_links));
+          auto url_content = each_spider->getUrl();
+          auto html_content = each_spider->getHtml();
+          auto unique_id = each_spider->getUniqueId();
+          return std::tuple<bool, std::vector<std::string>, std::string, std::string,
+                            unsigned long long>(
+              std::move(check_crawl), std::move(vec_of_out_links), std::move(url_content),
+              std::move(html_content), std::move(unique_id));
         });
 
         mFutures.push_back(std::move(result));
       }
 
       size_t numFutures = mFutures.size();
+      for (size_t i = 0; i < numFutures; i++)
+        mFutures[i].wait();
+
       for (size_t i = 0; i < numFutures; i++) {
-        auto aux_pair = mFutures[i].get();
-        if (!std::get<0>(aux_pair))
+#ifdef DEBUG
+        std::cout << WARNING << "Try to get future in " << i << ENDC << '\n';
+#endif
+        auto aux_tuple = mFutures[i].get();
+#ifdef DEBUG
+        std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
+#endif
+        if (!std::get<0>(aux_tuple))
           indexes_to_delete.push_back(i);
 
-        auto aux = std::get<1>(aux_pair);
+        auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
           outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
+
+        output.write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
+
       }
 
       if (indexes_to_delete.size() > 0) {
@@ -204,11 +294,13 @@ int main() {
         }
       }
 
+#ifdef DEBUG
       std::cout << GREEN << "Done a loop" << ENDC << '\n';
-      // print all mSpiders
+      // print all url mSpiders
       for (auto x : mSpiders) {
         std::cout << BOLD << x->getUrl() << ENDC << '\n';
       }
+#endif
 
       indexes_to_delete.clear();
       outbound_links.clear();
@@ -221,5 +313,12 @@ int main() {
       // std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
+  output.write("|||");
+  return 0;
+}
+
+int main() {
+  // main1();
+  CollectionID test;
   return 0;
 }
