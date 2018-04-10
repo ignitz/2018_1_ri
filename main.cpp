@@ -8,7 +8,7 @@
 // #define STATE_FILE_NAME "save_state.sav"
 #define UNIQUEIDs_FILE "unique_id_file.txt"
 #define OUTPUT_FILE "output_file.txt"
-#define MAX_THREADS 250
+#define MAX_THREADS 10
 
 #include <string>
 #include <unistd.h>
@@ -28,19 +28,18 @@
 
 #include <utility>
 
+/*****************************************/
 class OutputFile {
 private:
   std::fstream obj_file;
 
 public:
-  OutputFile (std::string file_name){
+  OutputFile(std::string file_name) {
     if (!this->obj_file.is_open())
-      // this->obj_file.open(file_name, std::fstream::app);
-      this->obj_file.open(file_name);
+      this->obj_file.open(file_name, std::fstream::app);
+    // this->obj_file.open(file_name);
   };
-  virtual ~OutputFile (){
-    this->obj_file.close();
-  };
+  virtual ~OutputFile() { this->obj_file.close(); };
 
   void write(std::string url, std::string html) {
     // find '/' and remove
@@ -52,19 +51,19 @@ public:
     // this->obj_file << html;
   };
 
-  void write(std::string s) {
-    this->obj_file << s;
-  };
+  void write(std::string s) { this->obj_file << s; };
 };
 
+/*****************************************/
 class CollectionID {
 private:
   std::fstream obj_file;
+  std::vector<unsigned long long> vec_ids;
+
 public:
-  CollectionID (){
+  CollectionID() {
     if (!this->obj_file.is_open()) {
-      this->obj_file.open(UNIQUEIDs_FILE, std::fstream::in | std::fstream::out | std::fstream::app);
-      std::cout << "open" << '\n';
+      this->obj_file.open(UNIQUEIDs_FILE, std::fstream::app);
     }
 
     this->obj_file.seekg(0, this->obj_file.beg);
@@ -72,25 +71,38 @@ public:
 
     std::string getcontent;
 
-    while(! obj_file.eof())
-    {
+    while (true) {
       obj_file >> getcontent;
-      std::cout << getcontent << '\n';
-    }
+      if (obj_file.eof())
+        break;
+      if (getcontent.length() > 0)
+        vec_ids.push_back(std::stoull(getcontent));
+    };
 
-    // std::string line;
-    // std::getline(this->obj_file, line);
-    // while (std::getline(this->obj_file, line)) {
-    //   std::cout << line << '\n';
-    // }
-    // std::cout << line << '\n';
-  };
-  virtual ~CollectionID (){
+    for (auto x : vec_ids) {
+      std::cout << FAIL << x << ENDC << '\n';
+    }
     this->obj_file.close();
   };
+  virtual ~CollectionID() { this->obj_file.close(); };
 
   void write(std::string str) {
-    this->obj_file << str;
+    this->obj_file.open(UNIQUEIDs_FILE, std::fstream::app);
+    this->obj_file << str << '\n';
+    this->obj_file.close();
+  }
+  void write(unsigned long long id) { write(std::to_string(id)); }
+
+  void add_id(unsigned long long id) {
+    this->write(id);
+    vec_ids.push_back(id);
+  };
+
+  bool find_id(unsigned long long id) {
+    for (const auto &x : vec_ids)
+      if (x == id)
+        return true;
+    return false;
   }
 };
 
@@ -157,7 +169,6 @@ private:
       thread.join();
   }
 };
-/*****************************************/
 
 /*****************************************/
 #define INITIAL_URL "http://uol.com.br/"
@@ -168,12 +179,15 @@ private:
 
 int main1() {
   OutputFile output(OUTPUT_FILE);
+  CollectionID col_id;
+
   std::vector<Spider *> mSpiders;
   mSpiders.push_back(new Spider(INITIAL_URL));
 
   std::vector<std::string> outbound_links;
-  std::vector<std::future<std::tuple<bool, std::vector<std::string>,
-                                     std::string, std::string, unsigned long long>>>
+  std::vector<
+      std::future<std::tuple<bool, std::vector<std::string>, std::string,
+                             std::string, unsigned long long>>>
       mFutures;
 
   std::vector<int> indexes_to_delete;
@@ -183,11 +197,11 @@ int main1() {
 
   {
     bool isEnough = false;
-    std::future<std::tuple<bool, std::vector<std::string>, std::string, std::string,
-                           unsigned long long>>
+    std::future<std::tuple<bool, std::vector<std::string>, std::string,
+                           std::string, unsigned long long>>
         result;
 
-    int count = 0;
+    int count = 1;
 
     while (!isEnough && !mSpiders.empty()) {
       ThreadPool pool(MAX_THREADS);
@@ -202,10 +216,11 @@ int main1() {
           auto url_content = each_spider->getUrl();
           auto html_content = each_spider->getHtml();
           auto unique_id = each_spider->getUniqueId();
-          return std::tuple<bool, std::vector<std::string>, std::string, std::string,
-                            unsigned long long>(
-              std::move(check_crawl), std::move(vec_of_out_links), std::move(url_content),
-              std::move(html_content), std::move(unique_id));
+          return std::tuple<bool, std::vector<std::string>, std::string,
+                            std::string, unsigned long long>(
+              std::move(check_crawl), std::move(vec_of_out_links),
+              std::move(url_content), std::move(html_content),
+              std::move(unique_id));
         });
 
         mFutures.push_back(std::move(result));
@@ -229,9 +244,19 @@ int main1() {
         auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
           outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
-
+        unsigned long long id = std::get<4>(aux_tuple);
+        if (col_id.find_id(id)) {
+#ifdef DEBUG
+          std::cout << "continue" << '\n';
+#endif
+          continue;
+        } else {
+#ifdef DEBUG
+          std::cout << "add_id " << id << '\n';
+#endif
+          col_id.add_id(id);
+        }
         output.write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
-
       }
 
       if (indexes_to_delete.size() > 0) {
@@ -305,9 +330,9 @@ int main1() {
       indexes_to_delete.clear();
       outbound_links.clear();
       mFutures.clear();
-      if (count == 14) {
-        isEnough = true;
-      }
+      // if (count == 1) {
+      //   isEnough = true;
+      // }
       count++;
       // for avoid DDoS check
       // std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -318,7 +343,8 @@ int main1() {
 }
 
 int main() {
-  // main1();
-  CollectionID test;
+  main1();
+  // CollectionID test;
+  // test.write(87126376125356124);
   return 0;
 }

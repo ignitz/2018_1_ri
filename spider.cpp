@@ -13,12 +13,13 @@ bool orderByDepth(std::string url1, std::string url2) {
 std::mutex spider_mutex;
 
 Spider::Spider(std::string url) {
+  this->spider.put_ReadTimeout(10);
   this->domain = this->spider.getUrlDomain(url.c_str());
   if (url.substr(0, 8).compare("https://") != 0 &&
       url.substr(0, 7).compare("http://") != 0) {
     std::cerr << "Not a valid URL: " << url << '\n';
-    // throw;
-    return;
+    throw;
+    // return;
   }
 
   // this->spider.put_VerboseLogging(true);

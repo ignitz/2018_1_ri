@@ -18,7 +18,7 @@
 
 #include "utils.h"
 
-// #define DEBUG
+#define DEBUG
 
 // Max of 2MB
 #define MAX_RESPONSE_SIZE 2097152

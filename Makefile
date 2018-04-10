@@ -24,3 +24,6 @@ run:
 
 clean:
 	@$(RM) $(BIN_NAME)
+	@$(RM) output_file.txt unique_id_file.txt
+
+
