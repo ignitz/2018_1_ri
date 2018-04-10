@@ -15,7 +15,8 @@ Spider::Spider(std::string url) {
   if (url.substr(0, 8).compare("https://") != 0 &&
       url.substr(0, 7).compare("http://") != 0) {
     std::cerr << "Not a valid URL: " << url << '\n';
-    throw;
+    // throw;
+    return;
   }
 
   // this->spider.put_VerboseLogging(true);
@@ -128,7 +129,9 @@ std::vector<std::string> Spider::getUnspideredUrls() {
   return result;
 };
 
+std::mutex print_mutex;
 void Spider::printStatus() {
+  std::unique_lock<std::mutex> lock{print_mutex};
   std::cout << BOLD << "Spider Status" << '\n';
   std::cout << CYAN << "URL: " << BLUE << this->url.getString() << '\n';
   std::cout << CYAN << "Domain: " << BLUE << this->domain.getString() << '\n';

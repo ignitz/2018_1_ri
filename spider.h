@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 #include <algorithm> // sort
 #include <functional> // hash

@@ -7,7 +7,7 @@
 
 #define STATE_FILE_NAME "save_state.sav"
 #define LOG_FILE "log_file.txt"
-#define MAX_THREADS 4
+#define MAX_THREADS 250
 
 #include <string>
 #include <unistd.h>
@@ -93,7 +93,9 @@ private:
 /*****************************************/
 
 /*****************************************/
-#define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
+// #define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
+#define INITIAL_URL "http://www.asist.org/about/awards/best-information-science-book-award/best-information-science-book-award-past-winners"
+
 int main() {
   std::vector<Spider *> mSpiders;
   mSpiders.push_back(new Spider(INITIAL_URL));
@@ -104,13 +106,12 @@ int main() {
   std::vector<int> indexes_to_delete;
 
   {
-
     bool isEnough = false;
     std::future<std::pair<bool, std::vector<std::string>>> result;
 
     int count = 0;
 
-    while (!isEnough) {
+    while (!isEnough && !mSpiders.empty()) {
       ThreadPool pool(MAX_THREADS);
       size_t numSpiders = mSpiders.size();
       for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
@@ -139,7 +140,8 @@ int main() {
 
       if (indexes_to_delete.size() > 0) {
         for (auto i = indexes_to_delete.size(); i > 0; i--) {
-          std::cout << FAIL << "delete " << (i - 1) << ENDC << '\n';
+          std::cout << GREEN << "delete spider index " << (i - 1) << ENDC
+                    << '\n';
           delete mSpiders[indexes_to_delete[i - 1]];
           mSpiders.erase(mSpiders.begin() + indexes_to_delete[i - 1]);
         }
@@ -162,7 +164,13 @@ int main() {
           continue;
         util_url.ParseUrl(new_url.c_str());
         if (mSpiders.empty()) {
-          mSpiders.push_back(new Spider(new_url));
+          try {
+            Spider *aux_new_spider = new Spider(new_url);
+            mSpiders.push_back(aux_new_spider);
+          } catch (...) {
+            std::cout << FAIL << "Exception in constructor of spider:\n"
+                      << "\tURL = " << new_url << ENDC << '\n';
+          }
         } else {
           bool url_not_exist = true;
           auto size = mSpiders.size();
@@ -173,12 +181,23 @@ int main() {
               break;
             }
           }
-          if (url_not_exist)
-            mSpiders.push_back(new Spider(new_url));
+          if (url_not_exist) {
+            try {
+              Spider *aux_new_spider = new Spider(new_url);
+              mSpiders.push_back(aux_new_spider);
+            } catch (...) {
+              std::cout << FAIL << "Exception in constructor of spider:\n"
+                        << "\tURL = " << new_url << ENDC << '\n';
+            }
+          }
         }
       }
 
-      std::cout << FAIL << "Get here?" << ENDC << '\n';
+      std::cout << GREEN << "Done a loop" << ENDC << '\n';
+      // print all mSpiders
+      for (auto x : mSpiders) {
+        std::cout << BOLD << x->getUrl() << ENDC << '\n';
+      }
 
       indexes_to_delete.clear();
       outbound_links.clear();
@@ -188,7 +207,7 @@ int main() {
       }
       count++;
       // for avoid DDoS check
-      std::this_thread::sleep_for(std::chrono::seconds(5));
+      // std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
   return 0;
