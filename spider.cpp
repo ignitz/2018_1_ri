@@ -28,7 +28,7 @@ Spider::Spider(std::string url) {
   this->spider.put_MaxResponseSize(MAX_RESPONSE_SIZE);
   this->depth = countDepth(url);
 #ifdef DEBUG
-  std::cout << WARNING << "Spider constructed" << ENDC << '\n';
+  std::cout << WARNING << "Spider constructed to " << url << ENDC << '\n';
 #endif
 };
 
@@ -37,7 +37,8 @@ Spider::~Spider() {
   this->spider.ClearOutboundLinks();
   this->spider.ClearSpideredUrls();
 #ifdef DEBUG
-  std::cout << WARNING << "Spider deleted" << ENDC << '\n';
+  std::cout << WARNING << "Spider " << this->url.getString() << " deleted"
+            << ENDC << '\n';
 #endif
 };
 
@@ -166,6 +167,12 @@ void Spider::printLinks() {
 
 std::string Spider::getUrl() { return std::string(this->url.getString()); };
 
+std::string Spider::getHost() {
+  CkUrl util;
+  util.ParseUrl(this->url.getString());
+  return std::string(util.host());
+};
+
 std::string Spider::getHtml() { return std::string(this->spider.lastHtml()); };
 
 unsigned long long Spider::getUniqueId() {
@@ -175,23 +182,4 @@ unsigned long long Spider::getUniqueId() {
   unsigned long long id_hash = hash_fn(string_to_hash);
 
   return id_hash;
-};
-
-void Spider::init() {
-  // std::vector<std::thread> vec_thr;
-  //
-  // while (this->crawl()) {
-  //   this->removeUnspideredByDepth(MAX_DEPTH);
-  //   this->printStatus();
-  //   this->printLinks();
-  //
-  //   for (auto out_link : this->getOutboundLinks()) {
-  //     if (countDepth(out_link) <= MAX_DEPTH) {
-  //       Spider s_aux(out_link);
-  //       vec_thr.emplace_back(&Spider::init, std::move(s_aux));
-  //     }
-  //   }
-  //   for (auto &t : vec_thr) { t.join(); }
-  //   sleep(1);
-  // };
 };

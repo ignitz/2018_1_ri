@@ -7,6 +7,7 @@
 
 #define STATE_FILE_NAME "save_state.sav"
 #define LOG_FILE "log_file.txt"
+#define MAX_THREADS 4
 
 #include <string>
 #include <unistd.h>
@@ -24,6 +25,9 @@
 
 #include <future>
 
+#include <utility>
+
+/*****************************************/
 class ThreadPool {
 public:
   using Task = std::function<void()>;
@@ -55,17 +59,6 @@ private:
 
   void start(std::size_t numThreads) {
     for (std::size_t i = 0; i < numThreads; ++i) {
-      // The [=] you're referring to is part of the capture list for the
-      // lambda expression. This tells C++ that the code inside the lambda
-      // expression is initialized so that the lambda gets a copy of all the
-      // local variables it uses when it's created. This is necessary for
-      // the lambda expression to be able to refer to  factor and offset,
-      // which are local variables inside the function.
-
-      // If you replace the [=] with [], you'll get a compiler error because
-      // the code inside the lambda expression won't know what the variables
-      // offset and factor refer to. Many compilers give good diagnostic
-      // error messages if you do this, so try it and see what happens!
       mThreads.emplace_back([=] {
         while (true) {
           Task task;
@@ -97,37 +90,106 @@ private:
       thread.join();
   }
 };
+/*****************************************/
 
+/*****************************************/
+#define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
 int main() {
-	std::string url("http://homepages.dcc.ufmg.br/~berthier/");
+  std::vector<Spider *> mSpiders;
+  mSpiders.push_back(new Spider(INITIAL_URL));
+
+  std::vector<std::string> outbound_links;
+  std::vector<std::future<std::pair<bool, std::vector<std::string>>>> mFutures;
+
+  std::vector<int> indexes_to_delete;
+
   {
-    ThreadPool pool(36);
 
-		auto outbound_links = pool.enqueue([&url] {
-			Spider spider(url);
-			while(spider.crawl()){
-				spider.printStatus();
-			};
-			return spider.getOutboundLinks();
-		});
+    bool isEnough = false;
+    std::future<std::pair<bool, std::vector<std::string>>> result;
 
-		for(auto &x : outbound_links.get()) {
-			pool.enqueue([&x] {
-				Spider spider(x);
-				while(spider.crawl()){
-					spider.printStatus();
-				};
-				return 0;
-			});
-		}
-			// std::cout << x << '\n';
+    int count = 0;
 
-    // auto f1 = pool.enqueue([] { return 1; });
-		//
-    // auto f2 = pool.enqueue([] { return 2; });
-		//
-    // std::cout << (f1.get() + f2.get()) << std::endl;
+    while (!isEnough) {
+      ThreadPool pool(MAX_THREADS);
+      size_t numSpiders = mSpiders.size();
+      for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
+        Spider *each_spider = mSpiders[i];
+        result = pool.enqueue([&each_spider] {
+          bool check_crawl = each_spider->crawl();
+          each_spider->printStatus();
+          // each_spider->printLinks();
+          return std::pair<bool, std::vector<std::string>>(
+              check_crawl, each_spider->getOutboundLinks());
+        });
+
+        mFutures.push_back(std::move(result));
+      }
+
+      size_t numFutures = mFutures.size();
+      for (size_t i = 0; i < numFutures; i++) {
+        auto aux_pair = mFutures[i].get();
+        if (!std::get<0>(aux_pair))
+          indexes_to_delete.push_back(i);
+
+        auto aux = std::get<1>(aux_pair);
+        if (aux.size() > 0)
+          outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
+      }
+
+      if (indexes_to_delete.size() > 0) {
+        for (auto i = indexes_to_delete.size(); i > 0; i--) {
+          std::cout << FAIL << "delete " << (i - 1) << ENDC << '\n';
+          delete mSpiders[indexes_to_delete[i - 1]];
+          mSpiders.erase(mSpiders.begin() + indexes_to_delete[i - 1]);
+        }
+      }
+
+      // TODO: check if already unique
+
+      // remove duplicate urls
+      // std::sort(outbound_links.begin(), outbound_links.end());
+      // outbound_links.erase(
+      //     std::unique(outbound_links.begin(), outbound_links.end()),
+      //     outbound_links.end());
+
+      // for (auto x : outbound_links)
+      //   std::cout << x << '\n';
+
+      CkUrl util_url;
+      for (const auto &new_url : outbound_links) {
+        if (countDepth(new_url) > MAX_DEPTH)
+          continue;
+        util_url.ParseUrl(new_url.c_str());
+        if (mSpiders.empty()) {
+          mSpiders.push_back(new Spider(new_url));
+        } else {
+          bool url_not_exist = true;
+          auto size = mSpiders.size();
+          for (size_t i = 0; i < size; i++) {
+            if (mSpiders[i]->getHost().compare(util_url.host()) == 0) {
+              mSpiders[i]->AddUnspidered(new_url);
+              url_not_exist = false;
+              break;
+            }
+          }
+          if (url_not_exist)
+            mSpiders.push_back(new Spider(new_url));
+        }
+      }
+
+      std::cout << FAIL << "Get here?" << ENDC << '\n';
+
+      indexes_to_delete.clear();
+      outbound_links.clear();
+      mFutures.clear();
+      if (count == 14) {
+        isEnough = true;
+      }
+      count++;
+      // for avoid DDoS check
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
   }
-
   return 0;
 }

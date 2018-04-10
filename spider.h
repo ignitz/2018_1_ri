@@ -54,11 +54,9 @@ public:
   void printLinks();
 
   std::string getUrl();
+  std::string getHost();
   std::string getHtml();
 
   unsigned long long getUniqueId();
-
-  void init();
-
 };
 #endif
