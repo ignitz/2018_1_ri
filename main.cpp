@@ -12,7 +12,7 @@
 // Initial URL tp crawl
 #define INITIAL_URL "http://uol.com.br/"
 
-#define MAX_THREADS 1000
+#define MAX_THREADS 10
 
 #include <unistd.h>
 #include <string>
@@ -219,11 +219,24 @@ class Main {
       obj_file.open("onde_parou.txt", std::ios::in);
     }
 
+    CkUrl util_url;
+
     std::string getcontent;
     while (true) {
       obj_file >> getcontent;
       if (obj_file.eof()) break;
-      if (getcontent.length() > 0) this->mSpiders.push_back(new Spider(getcontent));
+
+      util_url.ParseUrl(getcontent.c_str());
+      if (getcontent.length() > 0) {
+        bool check = true;
+        for (auto & x_spider : mSpiders) {
+          if (x_spider->getBaseDomain().compare(getBaseDomain(util_url.host())) == 0) {
+            x_spider->AddUnspidered(getcontent);
+            check = false;
+          }
+        }
+        if (check) this->mSpiders.push_back(new Spider(getcontent));
+      }
     };
 
     for (auto x : this->mSpiders) {
@@ -355,12 +368,18 @@ class Main {
           for (size_t i = 0; i < size; i++) {
             if (mSpiders[i]->getBaseDomain().compare(
                     getBaseDomain(util_url.host())) == 0) {
+              #ifdef DEBUG
+              std::cout << WARNING << "Add a new url " << new_url << ENDC << '\n';
+              #endif
               mSpiders[i]->AddUnspidered(new_url);
               url_not_exist = false;
               break;
             }
           }
           if (url_not_exist) {
+            #ifdef DEBUG
+            std::cout << WARNING << "Add a new domain " << new_url << ENDC << '\n';
+            #endif
             try {
               Spider *aux_new_spider = new Spider(new_url);
               mSpiders.push_back(aux_new_spider);
@@ -391,6 +410,14 @@ class Main {
           while (strTemp.find(' ') != std::string::npos) {
             strTemp.replace(strTemp.begin() + strTemp.find(' '), strTemp.begin() + strTemp.find(' ') + 1, "%20");
           }
+          save_urls_file << strTemp << '\n';
+        }
+        for (auto & str_unsp_link : x->getUnspideredUrls()) {
+          strTemp = str_unsp_link;
+          while (strTemp.find(' ') != std::string::npos) {
+            strTemp.replace(strTemp.begin() + strTemp.find(' '), strTemp.begin() + strTemp.find(' ') + 1, "%20");
+          }
+          save_urls_file << strTemp << '\n';
         }
       }
       save_urls_file.close();
