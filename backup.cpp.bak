@@ -1,0 +1,163 @@
+int main1() {
+  OutputFile output(OUTPUT_FILE);
+  CollectionID col_id;
+  std::vector<Spider *> mSpiders;
+  mSpiders.push_back(new Spider(INITIAL_URL));
+
+  std::vector<std::string> outbound_links;
+  std::vector<
+      std::future<std::tuple<bool, std::vector<std::string>, std::string,
+                             std::string, unsigned long long>>>
+      mFutures;
+
+  std::vector<int> indexes_to_delete;
+
+  // to lambda function
+  Spider *each_spider;
+
+  {
+    isEnough = false;
+    std::future<std::tuple<bool, std::vector<std::string>, std::string,
+                           std::string, unsigned long long>>
+        result;
+
+    int count = 1;
+
+    while (!isEnough && !mSpiders.empty()) {
+      ThreadPool pool(MAX_THREADS);
+      size_t numSpiders = mSpiders.size();
+      for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
+        each_spider = mSpiders[i];
+        result = pool.enqueue([=] {
+          bool check_crawl = each_spider->crawl();
+          each_spider->printStatus();
+          // each_spider->printLinks();
+          auto vec_of_out_links = each_spider->getOutboundLinks();
+          auto url_content = each_spider->getUrl();
+          auto html_content = each_spider->getHtml();
+          auto unique_id = each_spider->getUniqueId();
+          return std::tuple<bool, std::vector<std::string>, std::string,
+                            std::string, unsigned long long>(
+              std::move(check_crawl), std::move(vec_of_out_links),
+              std::move(url_content), std::move(html_content),
+              std::move(unique_id));
+        });
+
+        mFutures.push_back(std::move(result));
+      }
+
+      size_t numFutures = mFutures.size();
+      for (size_t i = 0; i < numFutures; i++)
+        mFutures[i].wait();
+
+      for (size_t i = 0; i < numFutures; i++) {
+#ifdef DEBUG
+        std::cout << WARNING << "Try to get future in " << i << ENDC << '\n';
+#endif
+        auto aux_tuple = mFutures[i].get();
+#ifdef DEBUG
+        std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
+#endif
+        if (!std::get<0>(aux_tuple))
+          indexes_to_delete.push_back(i);
+
+        auto aux = std::get<1>(aux_tuple);
+        if (aux.size() > 0)
+          outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
+        unsigned long long id = std::get<4>(aux_tuple);
+        if (col_id.find_id(id)) {
+#ifdef DEBUG
+          std::cout << "continue" << '\n';
+#endif
+          continue;
+        } else {
+#ifdef DEBUG
+          std::cout << "add_id " << id << '\n';
+#endif
+          col_id.add_id(id);
+        }
+        output.write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
+      }
+
+      if (indexes_to_delete.size() > 0) {
+        for (auto i = indexes_to_delete.size(); i > 0; i--) {
+          std::cout << GREEN << "delete spider index " << (i - 1) << ENDC
+                    << '\n';
+          delete mSpiders[indexes_to_delete[i - 1]];
+          mSpiders.erase(mSpiders.begin() + indexes_to_delete[i - 1]);
+        }
+      }
+
+      // TODO: check if already unique
+
+      // remove duplicate urls
+      // std::sort(outbound_links.begin(), outbound_links.end());
+      // outbound_links.erase(
+      //     std::unique(outbound_links.begin(), outbound_links.end()),
+      //     outbound_links.end());
+
+      // for (auto x : outbound_links)
+      //   std::cout << x << '\n';
+
+      CkUrl util_url;
+      for (const auto &new_url : outbound_links) {
+        if (countDepth(new_url) > MAX_DEPTH)
+          continue;
+#ifdef ONLY_HUE_BR
+        if (check_if_not_BR(new_url))
+          continue;
+#endif
+        util_url.ParseUrl(new_url.c_str());
+        if (mSpiders.empty()) {
+          try {
+            Spider *aux_new_spider = new Spider(new_url);
+            mSpiders.push_back(aux_new_spider);
+          } catch (...) {
+            std::cout << FAIL << "Exception in constructor of spider:\n"
+                      << "\tURL = " << new_url << ENDC << '\n';
+          }
+        } else {
+          bool url_not_exist = true;
+          auto size = mSpiders.size();
+          for (size_t i = 0; i < size; i++) {
+            if (mSpiders[i]->getBaseDomain().compare(
+                    getBaseDomain(util_url.host())) == 0) {
+              mSpiders[i]->AddUnspidered(new_url);
+              url_not_exist = false;
+              break;
+            }
+          }
+          if (url_not_exist) {
+            try {
+              Spider *aux_new_spider = new Spider(new_url);
+              mSpiders.push_back(aux_new_spider);
+            } catch (...) {
+              std::cout << FAIL << "Exception in constructor of spider:\n"
+                        << "\tURL = " << new_url << ENDC << '\n';
+            }
+          }
+        }
+      }
+
+#ifdef DEBUG
+      std::cout << GREEN << "Done a loop" << ENDC << '\n';
+      // print all url mSpiders
+      for (auto x : mSpiders) {
+        std::cout << BOLD << x->getUrl() << ENDC << '\n';
+      }
+#endif
+
+      indexes_to_delete.clear();
+      outbound_links.clear();
+      mFutures.clear();
+      // if (count == 1) {
+      //   isEnough = true;
+      // }
+      count++;
+      // for avoid DDoS check
+      // std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+  }
+  output.write("|||");
+  return 0;
+}

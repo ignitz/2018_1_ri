@@ -8,10 +8,14 @@
 // #define STATE_FILE_NAME "save_state.sav"
 #define UNIQUEIDs_FILE "unique_id_file.txt"
 #define OUTPUT_FILE "output_file.txt"
+
+// Initial URL tp crawl
+#define INITIAL_URL "http://uol.com.br/"
+
 #define MAX_THREADS 10
 
-#include <string>
 #include <unistd.h>
+#include <string>
 
 #include <deque>
 #include <functional>
@@ -30,10 +34,10 @@
 
 /*****************************************/
 class OutputFile {
-private:
+ private:
   std::fstream obj_file;
 
-public:
+ public:
   OutputFile(std::string file_name) {
     if (!this->obj_file.is_open())
       this->obj_file.open(file_name, std::fstream::app);
@@ -56,32 +60,36 @@ public:
 
 /*****************************************/
 class CollectionID {
-private:
+ private:
   std::fstream obj_file;
   std::vector<unsigned long long> vec_ids;
 
-public:
+ public:
   CollectionID() {
+    this->obj_file.open(UNIQUEIDs_FILE);
+
     if (!this->obj_file.is_open()) {
-      this->obj_file.open(UNIQUEIDs_FILE, std::fstream::app);
+      this->obj_file.clear();
+      this->obj_file.open(UNIQUEIDs_FILE, std::ios::out);
+      this->obj_file.close();
+      this->obj_file.open(UNIQUEIDs_FILE, std::ios::in);
+    }
+    else {
+      this->obj_file.close();
+      this->obj_file.open(UNIQUEIDs_FILE, std::ios::in);
     }
 
-    this->obj_file.seekg(0, this->obj_file.beg);
-    // this->obj_file.seekp(0, this->obj_file.beg);
-
     std::string getcontent;
-
     while (true) {
       obj_file >> getcontent;
-      if (obj_file.eof())
-        break;
-      if (getcontent.length() > 0)
-        vec_ids.push_back(std::stoull(getcontent));
+      if (obj_file.eof()) break;
+      if (getcontent.length() > 0) vec_ids.push_back(std::stoull(getcontent));
     };
 
     for (auto x : vec_ids) {
       std::cout << FAIL << x << ENDC << '\n';
     }
+
     this->obj_file.close();
   };
   virtual ~CollectionID() { this->obj_file.close(); };
@@ -100,21 +108,25 @@ public:
 
   bool find_id(unsigned long long id) {
     for (const auto &x : vec_ids)
-      if (x == id)
-        return true;
+      if (x == id) return true;
     return false;
-  }
+  };
+
+  size_t get_many_ids() {
+    return vec_ids.size();
+  };
 };
 
 /*****************************************/
 class ThreadPool {
-public:
+ public:
   using Task = std::function<void()>;
 
   explicit ThreadPool(std::size_t numThreads) { start(numThreads); };
   ~ThreadPool() { stop(); };
 
-  template <class T> auto enqueue(T task) -> std::future<decltype(task())> {
+  template <class T>
+  auto enqueue(T task) -> std::future<decltype(task())> {
     auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(
         std::move(task));
     {
@@ -126,7 +138,7 @@ public:
     return wrapper->get_future();
   }
 
-private:
+ private:
   std::vector<std::thread> mThreads;
 
   std::condition_variable mEventVar;
@@ -146,8 +158,7 @@ private:
 
             mEventVar.wait(lock, [=] { return mStopping || !mTasks.empty(); });
 
-            if (mStopping && mTasks.empty())
-              break;
+            if (mStopping && mTasks.empty()) break;
 
             task = std::move(mTasks.front());
             mTasks.pop();
@@ -165,25 +176,16 @@ private:
 
     mEventVar.notify_all();
 
-    for (auto &thread : mThreads)
-      thread.join();
+    for (auto &thread : mThreads) thread.join();
   }
 };
 
 /*****************************************/
-#define INITIAL_URL "http://uol.com.br/"
-// #define INITIAL_URL "http://homepages.dcc.ufmg.br/~berthier/"
-// #define INITIAL_URL \
-  "http://www.asist.org/about/awards/best-information-science-book-award/"     \
-  "best-information-science-book-award-past-winners"
-
-int main1() {
-  OutputFile output(OUTPUT_FILE);
-  CollectionID col_id;
-
+class Main {
+ private:
+  OutputFile *output;
+  CollectionID *col_id;
   std::vector<Spider *> mSpiders;
-  mSpiders.push_back(new Spider(INITIAL_URL));
-
   std::vector<std::string> outbound_links;
   std::vector<
       std::future<std::tuple<bool, std::vector<std::string>, std::string,
@@ -192,16 +194,30 @@ int main1() {
 
   std::vector<int> indexes_to_delete;
 
-  // to lambda function
-  Spider *each_spider;
+  bool isEnough;
 
-  {
-    bool isEnough = false;
+ public:
+  Main(std::string initial_url, std::string output_file_name) {
+    this->output = new OutputFile(output_file_name);
+    this->col_id = new CollectionID();
+
+    this->mSpiders.push_back(new Spider(initial_url));
+  };
+  ~Main() {
+    this->output->write("|||");
+    std::cout << "-----------------------------------------------------------------------\n";
+    delete this->output;
+  };
+
+  void manage_crawl() {
+    isEnough = false;
     std::future<std::tuple<bool, std::vector<std::string>, std::string,
                            std::string, unsigned long long>>
         result;
 
     int count = 1;
+
+    Spider *each_spider;
 
     while (!isEnough && !mSpiders.empty()) {
       ThreadPool pool(MAX_THREADS);
@@ -226,37 +242,38 @@ int main1() {
         mFutures.push_back(std::move(result));
       }
 
+      // for avoid DDoS check
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+
       size_t numFutures = mFutures.size();
-      for (size_t i = 0; i < numFutures; i++)
-        mFutures[i].wait();
+      for (size_t i = 0; i < numFutures; i++) mFutures[i].wait();
 
       for (size_t i = 0; i < numFutures; i++) {
-#ifdef DEBUG
+        #ifdef DEBUG
         std::cout << WARNING << "Try to get future in " << i << ENDC << '\n';
-#endif
+        #endif
         auto aux_tuple = mFutures[i].get();
-#ifdef DEBUG
+        #ifdef DEBUG
         std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
-#endif
-        if (!std::get<0>(aux_tuple))
-          indexes_to_delete.push_back(i);
+        #endif
+        if (!std::get<0>(aux_tuple)) indexes_to_delete.push_back(i);
 
         auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
           outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
         unsigned long long id = std::get<4>(aux_tuple);
-        if (col_id.find_id(id)) {
-#ifdef DEBUG
-          std::cout << "continue" << '\n';
-#endif
+        if (col_id->find_id(id)) {
+          #ifdef DEBUG
+          std::cout << WARNING << "continue" << ENDC << '\n';
+          #endif
           continue;
         } else {
-#ifdef DEBUG
-          std::cout << "add_id " << id << '\n';
-#endif
-          col_id.add_id(id);
+          #ifdef DEBUG
+          std::cout << WARNING << "add_id " << id << ENDC << '\n';
+          #endif
+          col_id->add_id(id);
         }
-        output.write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
+        output->write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
       }
 
       if (indexes_to_delete.size() > 0) {
@@ -281,12 +298,10 @@ int main1() {
 
       CkUrl util_url;
       for (const auto &new_url : outbound_links) {
-        if (countDepth(new_url) > MAX_DEPTH)
-          continue;
-#ifdef ONLY_HUE_BR
-        if (check_if_not_BR(new_url))
-          continue;
-#endif
+        if (countDepth(new_url) > MAX_DEPTH) continue;
+        #ifdef ONLY_HUE_BR
+        if (check_if_not_BR(new_url)) continue;
+        #endif
         util_url.ParseUrl(new_url.c_str());
         if (mSpiders.empty()) {
           try {
@@ -319,13 +334,13 @@ int main1() {
         }
       }
 
-#ifdef DEBUG
+      #ifdef DEBUG
       std::cout << GREEN << "Done a loop" << ENDC << '\n';
       // print all url mSpiders
       for (auto x : mSpiders) {
         std::cout << BOLD << x->getUrl() << ENDC << '\n';
       }
-#endif
+      #endif
 
       indexes_to_delete.clear();
       outbound_links.clear();
@@ -333,18 +348,24 @@ int main1() {
       // if (count == 1) {
       //   isEnough = true;
       // }
-      count++;
-      // for avoid DDoS check
-      // std::this_thread::sleep_for(std::chrono::seconds(5));
+      // Para quando tiver um milhão de páginas
+      if (col_id->get_many_ids() >= 1000000) {
+        isEnough = true;
+      }
+      count++;      
     }
-  }
-  output.write("|||");
-  return 0;
+  };
+};
+
+/*****************************************/
+
+void test1() {
+  Main* mainoso = new Main(INITIAL_URL, OUTPUT_FILE);
+  mainoso->manage_crawl();
+  delete mainoso;
 }
 
 int main() {
-  main1();
-  // CollectionID test;
-  // test.write(87126376125356124);
+  test1();
   return 0;
 }

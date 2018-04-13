@@ -32,3 +32,5 @@
 *.app
 
 main
+output_file.txt
+unique_id_file.txt
