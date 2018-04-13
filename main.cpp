@@ -12,7 +12,7 @@
 // Initial URL tp crawl
 #define INITIAL_URL "http://uol.com.br/"
 
-#define MAX_THREADS 50
+#define MAX_THREADS 1000
 
 #include <unistd.h>
 #include <string>
@@ -194,6 +194,8 @@ class Main {
                              std::string, unsigned long long>>>
       mFutures;
 
+  std::vector<int> indexes_to_delete;
+
   bool isEnough;
 
  public:
@@ -250,29 +252,25 @@ class Main {
 
     while (!isEnough && !mSpiders.empty()) {
       ThreadPool pool(MAX_THREADS);
-      ;
       size_t numSpiders = mSpiders.size();
-      for (size_t i = 0, count_lauch_thread = 0; i < numSpiders && count_lauch_thread < MAX_THREADS; ++i) {
+      for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
         each_spider = mSpiders[i];
-        if (each_spider->isActive())
-        {
-          result = pool.enqueue([=] {
-            bool check_crawl = each_spider->crawl();
-            // each_spider->printStatus();
-            // each_spider->printLinks();
-            auto vec_of_out_links = each_spider->getOutboundLinks();
-            auto url_content = each_spider->getUrl();
-            auto html_content = each_spider->getHtml();
-            auto unique_id = each_spider->getUniqueId();
-            return std::tuple<bool, std::vector<std::string>, std::string,
-                              std::string, unsigned long long>(
-                std::move(check_crawl), std::move(vec_of_out_links),
-                std::move(url_content), std::move(html_content),
-                std::move(unique_id));
-          });
-          count_lauch_thread++;
-          mFutures.push_back(std::move(result));
-        }
+        result = pool.enqueue([=] {
+          bool check_crawl = each_spider->crawl();
+          each_spider->printStatus();
+          // each_spider->printLinks();
+          auto vec_of_out_links = each_spider->getOutboundLinks();
+          auto url_content = each_spider->getUrl();
+          auto html_content = each_spider->getHtml();
+          auto unique_id = each_spider->getUniqueId();
+          return std::tuple<bool, std::vector<std::string>, std::string,
+                            std::string, unsigned long long>(
+              std::move(check_crawl), std::move(vec_of_out_links),
+              std::move(url_content), std::move(html_content),
+              std::move(unique_id));
+        });
+
+        mFutures.push_back(std::move(result));
       }
 
       #ifdef DEBUG
@@ -280,7 +278,7 @@ class Main {
       #endif
 
       // for avoid DDoS check
-      // std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::this_thread::sleep_for(std::chrono::seconds(2));
 
       size_t numFutures = mFutures.size();
       for (size_t i = 0; i < numFutures; i++) mFutures[i].wait();
@@ -293,6 +291,7 @@ class Main {
         #ifdef DEBUG
         std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
         #endif
+        if (!std::get<0>(aux_tuple)) indexes_to_delete.push_back(i);
 
         auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
@@ -313,6 +312,15 @@ class Main {
         std::cout << WARNING << "Writing " << std::get<2>(aux_tuple) << " to file!\n" << ENDC;
         #endif
         output->write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
+      }
+
+      if (indexes_to_delete.size() > 0) {
+        for (auto i = indexes_to_delete.size(); i > 0; i--) {
+          std::cout << GREEN << "delete spider index " << (i - 1) << ENDC
+                    << '\n';
+          delete mSpiders[indexes_to_delete[i - 1]];
+          mSpiders.erase(mSpiders.begin() + indexes_to_delete[i - 1]);
+        }
       }
 
       // TODO: check if already unique
@@ -387,6 +395,7 @@ class Main {
       }
       save_urls_file.close();
 
+      indexes_to_delete.clear();
       outbound_links.clear();
       mFutures.clear();
       // if (count == 1) {

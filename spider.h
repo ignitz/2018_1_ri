@@ -52,7 +52,6 @@ public:
   void updateInfo();
   void removeUnspideredByDepth(int);
   void AddUnspidered(std::string);
-  bool isActive();
 
   void printStatus();
   void printLinks();

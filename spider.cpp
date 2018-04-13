@@ -31,7 +31,6 @@ Spider::Spider(std::string url) {
       this->url); // spider.AddUnspidered("https://www.uol.com.br/");
   this->spider.put_MaxResponseSize(MAX_RESPONSE_SIZE);
   this->depth = countDepth(url);
-  this->active = true;
 #ifdef DEBUG
   std::cout << WARNING << "Spider constructed to " << url << ENDC << '\n';
 #endif
@@ -54,7 +53,7 @@ bool Spider::crawl() {
   std::cout << WARNING << "Spider crawl in " << domain.getString() << ENDC
             << '\n';
 #endif
-  bool result = this->active = this->spider.CrawlNext();
+  bool result = this->spider.CrawlNext();
   this->html = this->spider.lastHtml();
   this->updateInfo();
 #ifdef DEBUG
@@ -90,10 +89,6 @@ void Spider::removeUnspideredByDepth(int min_depth) {
 
 void Spider::AddUnspidered(std::string url) {
   this->spider.AddUnspidered(url.c_str());
-};
-
-bool Spider::isActive() {
-  return this->active;
 };
 
 std::vector<std::string> Spider::getOutboundLinks() {
