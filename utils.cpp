@@ -28,7 +28,7 @@ std::string getBaseDomain(std::string url) {
 bool check_if_not_BR(std::string url) {
   CkSpider util;
   std::string domain = std::string(util.getBaseDomain(util.getUrlDomain(url.c_str())));
-  if (domain.find_last_of('.') > 0)
+  if (domain.find_last_of('.') != std::string::npos)
     return !!domain.substr(domain.find_last_of('.'), domain.length()).compare(".br");
   return true;
 }

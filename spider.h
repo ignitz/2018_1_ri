@@ -34,6 +34,8 @@ private:
   CkString base_domain;
   int depth;
 
+  bool active;
+
   std::queue<std::string> queue;
 
 public:
@@ -50,6 +52,7 @@ public:
   void updateInfo();
   void removeUnspideredByDepth(int);
   void AddUnspidered(std::string);
+  bool isActive();
 
   void printStatus();
   void printLinks();

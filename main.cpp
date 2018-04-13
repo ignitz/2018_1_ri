@@ -12,7 +12,7 @@
 // Initial URL tp crawl
 #define INITIAL_URL "http://uol.com.br/"
 
-#define MAX_THREADS 10
+#define MAX_THREADS 50
 
 #include <unistd.h>
 #include <string>
@@ -48,8 +48,10 @@ class OutputFile {
   void write(std::string url, std::string html) {
     // find '/' and remove
     this->obj_file << "|||" << url << '|';
-    html.erase(std::remove(html.begin(), html.end(), '|'), html.end());
-    this->obj_file << html;
+    if (html.length() > 0) {
+      html.erase(std::remove(html.begin(), html.end(), '|'), html.end());
+      this->obj_file << html;
+    }
     // this->obj_file << url << '\n';
     // html.erase(std::remove(html.begin(), html.end(), '|'), html.end());
     // this->obj_file << html;
@@ -192,8 +194,6 @@ class Main {
                              std::string, unsigned long long>>>
       mFutures;
 
-  std::vector<int> indexes_to_delete;
-
   bool isEnough;
 
  public:
@@ -201,7 +201,36 @@ class Main {
     this->output = new OutputFile(output_file_name);
     this->col_id = new CollectionID();
 
-    this->mSpiders.push_back(new Spider(initial_url));
+    // this->mSpiders.push_back(new Spider(initial_url));
+    std::fstream obj_file;
+    obj_file.open("onde_parou.txt");
+
+    // trecho temporário, apagar
+    if (!obj_file.is_open()) {
+      obj_file.clear();
+      obj_file.open("onde_parou.txt", std::ios::out);
+      obj_file.close();
+      obj_file.open("onde_parou.txt", std::ios::in);
+    }
+    else {
+      obj_file.close();
+      obj_file.open("onde_parou.txt", std::ios::in);
+    }
+
+    std::string getcontent;
+    while (true) {
+      obj_file >> getcontent;
+      if (obj_file.eof()) break;
+      if (getcontent.length() > 0) this->mSpiders.push_back(new Spider(getcontent));
+    };
+
+    for (auto x : this->mSpiders) {
+      std::cout << FAIL << x->getUrl() << ENDC << '\n';
+    }
+
+    obj_file.close();
+    ////////////////////////////////
+
   };
   ~Main() {
     this->output->write("|||");
@@ -221,29 +250,37 @@ class Main {
 
     while (!isEnough && !mSpiders.empty()) {
       ThreadPool pool(MAX_THREADS);
+      ;
       size_t numSpiders = mSpiders.size();
-      for (size_t i = 0; i < numSpiders && i < MAX_THREADS; ++i) {
+      for (size_t i = 0, count_lauch_thread = 0; i < numSpiders && count_lauch_thread < MAX_THREADS; ++i) {
         each_spider = mSpiders[i];
-        result = pool.enqueue([=] {
-          bool check_crawl = each_spider->crawl();
-          each_spider->printStatus();
-          // each_spider->printLinks();
-          auto vec_of_out_links = each_spider->getOutboundLinks();
-          auto url_content = each_spider->getUrl();
-          auto html_content = each_spider->getHtml();
-          auto unique_id = each_spider->getUniqueId();
-          return std::tuple<bool, std::vector<std::string>, std::string,
-                            std::string, unsigned long long>(
-              std::move(check_crawl), std::move(vec_of_out_links),
-              std::move(url_content), std::move(html_content),
-              std::move(unique_id));
-        });
-
-        mFutures.push_back(std::move(result));
+        if (each_spider->isActive())
+        {
+          result = pool.enqueue([=] {
+            bool check_crawl = each_spider->crawl();
+            // each_spider->printStatus();
+            // each_spider->printLinks();
+            auto vec_of_out_links = each_spider->getOutboundLinks();
+            auto url_content = each_spider->getUrl();
+            auto html_content = each_spider->getHtml();
+            auto unique_id = each_spider->getUniqueId();
+            return std::tuple<bool, std::vector<std::string>, std::string,
+                              std::string, unsigned long long>(
+                std::move(check_crawl), std::move(vec_of_out_links),
+                std::move(url_content), std::move(html_content),
+                std::move(unique_id));
+          });
+          count_lauch_thread++;
+          mFutures.push_back(std::move(result));
+        }
       }
 
+      #ifdef DEBUG
+      std::cout << WARNING << "Done dispatch threads " << ENDC << '\n';
+      #endif
+
       // for avoid DDoS check
-      std::this_thread::sleep_for(std::chrono::seconds(2));
+      // std::this_thread::sleep_for(std::chrono::seconds(2));
 
       size_t numFutures = mFutures.size();
       for (size_t i = 0; i < numFutures; i++) mFutures[i].wait();
@@ -256,7 +293,6 @@ class Main {
         #ifdef DEBUG
         std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
         #endif
-        if (!std::get<0>(aux_tuple)) indexes_to_delete.push_back(i);
 
         auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
@@ -273,16 +309,10 @@ class Main {
           #endif
           col_id->add_id(id);
         }
+        #ifdef DEBUG
+        std::cout << WARNING << "Writing " << std::get<2>(aux_tuple) << " to file!\n" << ENDC;
+        #endif
         output->write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
-      }
-
-      if (indexes_to_delete.size() > 0) {
-        for (auto i = indexes_to_delete.size(); i > 0; i--) {
-          std::cout << GREEN << "delete spider index " << (i - 1) << ENDC
-                    << '\n';
-          delete mSpiders[indexes_to_delete[i - 1]];
-          mSpiders.erase(mSpiders.begin() + indexes_to_delete[i - 1]);
-        }
       }
 
       // TODO: check if already unique
@@ -336,13 +366,27 @@ class Main {
 
       #ifdef DEBUG
       std::cout << GREEN << "Done a loop" << ENDC << '\n';
+      #endif
       // print all url mSpiders
+      #ifdef DEBUG
+      std::cout << WARNING << "Save state" << ENDC << '\n';
+      #endif
+      std::fstream save_urls_file("onde_parou.txt", std::ios::out);
+      std::string strTemp;
       for (auto x : mSpiders) {
         std::cout << BOLD << x->getUrl() << ENDC << '\n';
+        strTemp = x->getUrl();
+        if (strTemp.find(' ') == std::string::npos) {
+          save_urls_file << strTemp << '\n';
+        }
+        else {
+          while (strTemp.find(' ') != std::string::npos) {
+            strTemp.replace(strTemp.begin() + strTemp.find(' '), strTemp.begin() + strTemp.find(' ') + 1, "%20");
+          }
+        }
       }
-      #endif
+      save_urls_file.close();
 
-      indexes_to_delete.clear();
       outbound_links.clear();
       mFutures.clear();
       // if (count == 1) {
@@ -352,7 +396,7 @@ class Main {
       if (col_id->get_many_ids() >= 1000000) {
         isEnough = true;
       }
-      count++;      
+      count++;
     }
   };
 };
