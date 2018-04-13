@@ -5,7 +5,7 @@
 
 #define ONLY_HUE_BR
 
-// #define STATE_FILE_NAME "save_state.sav"
+#define STATE_FILE_NAME "save_state.sav"
 #define UNIQUEIDs_FILE "unique_id_file.txt"
 #define OUTPUT_FILE "output_file.txt"
 
@@ -14,8 +14,8 @@
 
 #define MAX_THREADS 10
 
-#include <unistd.h>
 #include <string>
+#include <unistd.h>
 
 #include <deque>
 #include <functional>
@@ -34,10 +34,10 @@
 
 /*****************************************/
 class OutputFile {
- private:
+private:
   std::fstream obj_file;
 
- public:
+public:
   OutputFile(std::string file_name) {
     if (!this->obj_file.is_open())
       this->obj_file.open(file_name, std::fstream::app);
@@ -62,11 +62,11 @@ class OutputFile {
 
 /*****************************************/
 class CollectionID {
- private:
+private:
   std::fstream obj_file;
   std::vector<unsigned long long> vec_ids;
 
- public:
+public:
   CollectionID() {
     this->obj_file.open(UNIQUEIDs_FILE);
 
@@ -75,8 +75,7 @@ class CollectionID {
       this->obj_file.open(UNIQUEIDs_FILE, std::ios::out);
       this->obj_file.close();
       this->obj_file.open(UNIQUEIDs_FILE, std::ios::in);
-    }
-    else {
+    } else {
       this->obj_file.close();
       this->obj_file.open(UNIQUEIDs_FILE, std::ios::in);
     }
@@ -84,8 +83,10 @@ class CollectionID {
     std::string getcontent;
     while (true) {
       obj_file >> getcontent;
-      if (obj_file.eof()) break;
-      if (getcontent.length() > 0) vec_ids.push_back(std::stoull(getcontent));
+      if (obj_file.eof())
+        break;
+      if (getcontent.length() > 0)
+        vec_ids.push_back(std::stoull(getcontent));
     };
 
     for (auto x : vec_ids) {
@@ -110,25 +111,23 @@ class CollectionID {
 
   bool find_id(unsigned long long id) {
     for (const auto &x : vec_ids)
-      if (x == id) return true;
+      if (x == id)
+        return true;
     return false;
   };
 
-  size_t get_many_ids() {
-    return vec_ids.size();
-  };
+  size_t get_many_ids() { return vec_ids.size(); };
 };
 
 /*****************************************/
 class ThreadPool {
- public:
+public:
   using Task = std::function<void()>;
 
   explicit ThreadPool(std::size_t numThreads) { start(numThreads); };
   ~ThreadPool() { stop(); };
 
-  template <class T>
-  auto enqueue(T task) -> std::future<decltype(task())> {
+  template <class T> auto enqueue(T task) -> std::future<decltype(task())> {
     auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(
         std::move(task));
     {
@@ -140,7 +139,7 @@ class ThreadPool {
     return wrapper->get_future();
   }
 
- private:
+private:
   std::vector<std::thread> mThreads;
 
   std::condition_variable mEventVar;
@@ -160,7 +159,8 @@ class ThreadPool {
 
             mEventVar.wait(lock, [=] { return mStopping || !mTasks.empty(); });
 
-            if (mStopping && mTasks.empty()) break;
+            if (mStopping && mTasks.empty())
+              break;
 
             task = std::move(mTasks.front());
             mTasks.pop();
@@ -178,13 +178,14 @@ class ThreadPool {
 
     mEventVar.notify_all();
 
-    for (auto &thread : mThreads) thread.join();
+    for (auto &thread : mThreads)
+      thread.join();
   }
 };
 
 /*****************************************/
 class Main {
- private:
+private:
   OutputFile *output;
   CollectionID *col_id;
   std::vector<Spider *> mSpiders;
@@ -198,25 +199,24 @@ class Main {
 
   bool isEnough;
 
- public:
+public:
   Main(std::string initial_url, std::string output_file_name) {
     this->output = new OutputFile(output_file_name);
     this->col_id = new CollectionID();
 
     // this->mSpiders.push_back(new Spider(initial_url));
     std::fstream obj_file;
-    obj_file.open("onde_parou.txt");
+    obj_file.open(STATE_FILE_NAME);
 
     // trecho temporário, apagar
     if (!obj_file.is_open()) {
       obj_file.clear();
-      obj_file.open("onde_parou.txt", std::ios::out);
+      obj_file.open(STATE_FILE_NAME, std::ios::out);
       obj_file.close();
-      obj_file.open("onde_parou.txt", std::ios::in);
-    }
-    else {
+      obj_file.open(STATE_FILE_NAME, std::ios::in);
+    } else {
       obj_file.close();
-      obj_file.open("onde_parou.txt", std::ios::in);
+      obj_file.open(STATE_FILE_NAME, std::ios::in);
     }
 
     CkUrl util_url;
@@ -224,20 +224,26 @@ class Main {
     std::string getcontent;
     while (true) {
       obj_file >> getcontent;
-      if (obj_file.eof()) break;
+      if (obj_file.eof())
+        break;
 
       util_url.ParseUrl(getcontent.c_str());
       if (getcontent.length() > 0) {
         bool check = true;
-        for (auto & x_spider : mSpiders) {
-          if (x_spider->getBaseDomain().compare(getBaseDomain(util_url.host())) == 0) {
+        for (auto &x_spider : mSpiders) {
+          if (x_spider->getBaseDomain().compare(
+                  getBaseDomain(util_url.host())) == 0) {
             x_spider->AddUnspidered(getcontent);
             check = false;
           }
         }
-        if (check) this->mSpiders.push_back(new Spider(getcontent));
+        if (check)
+          this->mSpiders.push_back(new Spider(getcontent));
       }
     };
+
+    if (this->mSpiders.size() == 0)
+      this->mSpiders.push_back(new Spider(initial_url));
 
     for (auto x : this->mSpiders) {
       std::cout << FAIL << x->getUrl() << ENDC << '\n';
@@ -245,11 +251,11 @@ class Main {
 
     obj_file.close();
     ////////////////////////////////
-
   };
   ~Main() {
     this->output->write("|||");
-    std::cout << "-----------------------------------------------------------------------\n";
+    std::cout << "-------------------------------------------------------------"
+                 "----------\n";
     delete this->output;
   };
 
@@ -286,44 +292,48 @@ class Main {
         mFutures.push_back(std::move(result));
       }
 
-      #ifdef DEBUG
+#ifdef DEBUG
       std::cout << WARNING << "Done dispatch threads " << ENDC << '\n';
-      #endif
+#endif
 
       // for avoid DDoS check
       std::this_thread::sleep_for(std::chrono::seconds(2));
 
       size_t numFutures = mFutures.size();
-      for (size_t i = 0; i < numFutures; i++) mFutures[i].wait();
+      for (size_t i = 0; i < numFutures; i++)
+        mFutures[i].wait();
 
       for (size_t i = 0; i < numFutures; i++) {
-        #ifdef DEBUG
+#ifdef DEBUG
         std::cout << WARNING << "Try to get future in " << i << ENDC << '\n';
-        #endif
+#endif
         auto aux_tuple = mFutures[i].get();
-        #ifdef DEBUG
+#ifdef DEBUG
         std::cout << WARNING << "Catch future in " << i << ENDC << '\n';
-        #endif
-        if (!std::get<0>(aux_tuple)) indexes_to_delete.push_back(i);
+#endif
+        if (!std::get<0>(aux_tuple))
+          indexes_to_delete.push_back(i);
 
         auto aux = std::get<1>(aux_tuple);
         if (aux.size() > 0)
           outbound_links.insert(outbound_links.end(), aux.begin(), aux.end());
         unsigned long long id = std::get<4>(aux_tuple);
         if (col_id->find_id(id)) {
-          #ifdef DEBUG
+#ifdef DEBUG
           std::cout << WARNING << "continue" << ENDC << '\n';
-          #endif
+#endif
           continue;
         } else {
-          #ifdef DEBUG
+#ifdef DEBUG
           std::cout << WARNING << "add_id " << id << ENDC << '\n';
-          #endif
+#endif
           col_id->add_id(id);
         }
-        #ifdef DEBUG
-        std::cout << WARNING << "Writing " << std::get<2>(aux_tuple) << " to file!\n" << ENDC;
-        #endif
+#ifdef DEBUG
+        std::cout << WARNING << "Writing " << std::get<2>(aux_tuple)
+                  << " to file!\n"
+                  << ENDC;
+#endif
         output->write(std::get<2>(aux_tuple), std::get<3>(aux_tuple));
       }
 
@@ -336,23 +346,30 @@ class Main {
         }
       }
 
+      for (size_t i = 0; i < MAX_THREADS - indexes_to_delete.size(); i++) {
+        mSpiders.push_back(mSpiders.front());
+        mSpiders.erase(mSpiders.begin());
+      }
+
       // TODO: check if already unique
 
       // remove duplicate urls
       // std::sort(outbound_links.begin(), outbound_links.end());
-      // outbound_links.erase(
-      //     std::unique(outbound_links.begin(), outbound_links.end()),
-      //     outbound_links.end());
+      outbound_links.erase(
+          std::unique(outbound_links.begin(), outbound_links.end()),
+          outbound_links.end());
 
       // for (auto x : outbound_links)
       //   std::cout << x << '\n';
 
       CkUrl util_url;
       for (const auto &new_url : outbound_links) {
-        if (countDepth(new_url) > MAX_DEPTH) continue;
-        #ifdef ONLY_HUE_BR
-        if (check_if_not_BR(new_url)) continue;
-        #endif
+        if (countDepth(new_url) > MAX_DEPTH)
+          continue;
+#ifdef ONLY_HUE_BR
+        if (check_if_not_BR(new_url))
+          continue;
+#endif
         util_url.ParseUrl(new_url.c_str());
         if (mSpiders.empty()) {
           try {
@@ -368,18 +385,20 @@ class Main {
           for (size_t i = 0; i < size; i++) {
             if (mSpiders[i]->getBaseDomain().compare(
                     getBaseDomain(util_url.host())) == 0) {
-              #ifdef DEBUG
-              std::cout << WARNING << "Add a new url " << new_url << ENDC << '\n';
-              #endif
+#ifdef DEBUG
+              std::cout << WARNING << "Add a new url " << new_url << ENDC
+                        << '\n';
+#endif
               mSpiders[i]->AddUnspidered(new_url);
               url_not_exist = false;
               break;
             }
           }
           if (url_not_exist) {
-            #ifdef DEBUG
-            std::cout << WARNING << "Add a new domain " << new_url << ENDC << '\n';
-            #endif
+#ifdef DEBUG
+            std::cout << WARNING << "Add a new domain " << new_url << ENDC
+                      << '\n';
+#endif
             try {
               Spider *aux_new_spider = new Spider(new_url);
               mSpiders.push_back(aux_new_spider);
@@ -391,35 +410,46 @@ class Main {
         }
       }
 
-      #ifdef DEBUG
+#ifdef DEBUG
       std::cout << GREEN << "Done a loop" << ENDC << '\n';
-      #endif
-      // print all url mSpiders
-      #ifdef DEBUG
+#endif
+// print all url mSpiders
+#ifdef DEBUG
       std::cout << WARNING << "Save state" << ENDC << '\n';
-      #endif
-      std::fstream save_urls_file("onde_parou.txt", std::ios::out);
+#endif
+      std::fstream save_urls_file(STATE_FILE_NAME, std::ios::out);
       std::string strTemp;
+      std::vector<std::string> vec_urls_to_write;
       for (auto x : mSpiders) {
         std::cout << BOLD << x->getUrl() << ENDC << '\n';
         strTemp = x->getUrl();
         if (strTemp.find(' ') == std::string::npos) {
-          save_urls_file << strTemp << '\n';
-        }
-        else {
+          vec_urls_to_write.push_back(strTemp);
+        } else {
           while (strTemp.find(' ') != std::string::npos) {
-            strTemp.replace(strTemp.begin() + strTemp.find(' '), strTemp.begin() + strTemp.find(' ') + 1, "%20");
+            strTemp.replace(strTemp.begin() + strTemp.find(' '),
+                            strTemp.begin() + strTemp.find(' ') + 1, "%20");
           }
-          save_urls_file << strTemp << '\n';
+          vec_urls_to_write.push_back(strTemp);
         }
-        for (auto & str_unsp_link : x->getUnspideredUrls()) {
+        for (auto &str_unsp_link : x->getUnspideredUrls()) {
           strTemp = str_unsp_link;
           while (strTemp.find(' ') != std::string::npos) {
-            strTemp.replace(strTemp.begin() + strTemp.find(' '), strTemp.begin() + strTemp.find(' ') + 1, "%20");
+            strTemp.replace(strTemp.begin() + strTemp.find(' '),
+                            strTemp.begin() + strTemp.find(' ') + 1, "%20");
           }
-          save_urls_file << strTemp << '\n';
+          vec_urls_to_write.push_back(strTemp);
         }
       }
+
+      // remove duplicate URLs
+      std::sort(vec_urls_to_write.begin(), vec_urls_to_write.end());
+      vec_urls_to_write.erase(
+        std::unique(vec_urls_to_write.begin(), vec_urls_to_write.end()),
+        vec_urls_to_write.end());
+
+      for (const auto & str_url : vec_urls_to_write)
+        save_urls_file << str_url << '\n';
       save_urls_file.close();
 
       indexes_to_delete.clear();
@@ -440,7 +470,7 @@ class Main {
 /*****************************************/
 
 void test1() {
-  Main* mainoso = new Main(INITIAL_URL, OUTPUT_FILE);
+  Main *mainoso = new Main(INITIAL_URL, OUTPUT_FILE);
   mainoso->manage_crawl();
   delete mainoso;
 }
