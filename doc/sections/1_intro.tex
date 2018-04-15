@@ -1,9 +1,28 @@
-\section{Introdução}
-O campo da Teoria da Informação é amplamente considerado inicialmente concretizado pela publicação do trabalho inicial de Claude Shannon sobre o assunto \cite{shannon1}. Nisso, Shannon formalizou alguns dos conceitos
-básicos utilizados atualmente na área, tais como as medidas de entropia de informação. Ele também provou alguns dos seus resultados mais fundamentais, como o teorema de codificação do canal ruidoso. O trabalho inicial de Shannon e grande parte dos desenvolvimentos que se basearam nisso, no entanto, estavam preocupados com o problema específico da comunicação através de canais defeituosos.
+\section{Introdução} O trabalho consiste em criar um crawler que coletará
+links (internos e externos) e criará um arquivo de dump contendo a url e a
+página em html conforme está na especificação.
 
-Contribuições subseqüentes descobriram que o \textit{framework} desenvolvido por Shannon pode ser usado para modelar e estudar problemas em uma grande variedade de outros contextos. Alguns incluem Cryptography \cite{ahlswede1}, Privacy and Information Leakage \cite{alvim1}, e Machine Learning / Data Mining \cite{witten1}.
+Alguns requisitos do crawler são:
 
-Essencialmente, em qualquer campo em que o conceito abstrato de informação possa ser pensado de uma métrica útil para medir e manipular, pode-se usar um método teórico formalização à la Shannon para modelar suas propriedades fundamentais e inferir resultados úteis.
 
-Embora algumas das aplicações mais óbvias, incluindo algumas mencionadas, caem em algum grau no campo geral da ciência da computação, outros se estendem mesmo além disso. Neste artigo, nos concentramos em um desses campos menos óbvios: o estudo da teoria do investimento e do jogo. Nós primeiro mostre como alguns conceitos básicos de portfolio e teoria do investimento foram formalizados \emph{antes} o advento da teoria da informação, e depois estude os desenvolvimentos futuros que aprimoram ou desenvolvem sobre isso através da aplicação de informações teóricas idéias.
+
+\begin{itemize}
+  \item{Formato do arquivo de dump:}
+
+  |||<url>|<conteúdo>|||<url>|<conteúdo>|||...
+
+  |||<url>|<conteúdo>|||
+
+
+  \item{Código em C++}
+  \item{Uso da biblioteca Chilkat é recomendado}
+  \item{Baixar páginas no domínio *.br}
+  \item{Coletar somente páginas HTML}
+  \item{Coletar páginas com no máximo 2 MB}
+  \item{Mínimo: 1 milhão de páginas}
+  \item{Máximo: 5 milhões de páginas}
+  \item{Comprimir o arquivo final no formato .tar}
+\end{itemize}
+
+Todos os requisitos foram atendidos com exceção do mínimo da
+coleção de páginas que será explicado a seguir.
