@@ -1,0 +1,20 @@
+\section{Modern Portfolio Theory}
+
+A teoria do investimento e do jogo, obviamente, é anterior à da Teoria da Informação, dado que seu objeto de estudo existe por muito mais tempo. Portanto, é importante dar um preâmbulo de alguns de seus principais modelos teóricos, especialmente aqueles que foram construídos de alguma forma por autores dos backgrounds da Teoria da Informação.
+
+O primeiro framework teórico principal que foi efetivamente usado (e ainda é usado até certo ponto) por especialistas e acadêmicos para modelar a tomada de decisão dos investidores é o modelo Sharpe-Markowitz, também chamado de Modern Portfolio Theory \cite{markowitz1}. Ao tomar decisões de investimento, os investidores racionais estão essencialmente preocupados com um único objetivo: maximizar o retorno esperado. Ou seja, considerando o quanto da riqueza foi investida em uma variedade de ativos e o preço de cada ativo, quer maximizar o crescimento dessa riqueza.
+
+Um mercado de ações pode ser representado como um vetor de ações $ X = (X_1, X_2, ..., X_m) $, onde $ m $ é o número de ações disponíveis no mercado, e cada preço $ X_i $ realmente se refere a o preço \emph{diferencial} de cada estoque. Ou seja, mede a proporção entre o preço de uma ação no início de um determinado período e seu preço no final desse período. Então, se alguém estivesse medindo os preços abertos/fechados para uma determinada ação durante um dia típico de negociação, um valor de $ X_i = 1.10 $ significaria que o valor do estoque $ i $ aumentou em US $ 10 \% $, a partir do momento em que o mercado é aberto ao momento em que fechou.
+
+O portfólio de um investidor pode, portanto, ser modelado por outro vetor $ b = (b_1, b_2, ..., b_m) $, onde cada $ b_i $ representa a parcela da riqueza total investida em estoque $ i $. É lógico que $ b_i \geq 0 $ (um não pode investir um valor negativo em uma ação) e $ \sum b_i = 1 $ (a soma de todas as proporções da riqueza total). O objetivo é, então, encontrar uma alocação de portfólio que maximize $ \sum_ {i = 1} ^ {m} b_iX_i $, que é o retorno esperado de uma carteira $ b $ em um mercado $ X $.
+
+No entanto, nenhum investidor tem informações perfeitas e, portanto, qualquer estoque tem um risco associado. O risco é uma métrica extremamente difícil de definir e medir. Na \emph{The Modern Portfolio Theory}, o risco de uma determinada ação é definido como sua volatilidade, que pode ser representada por sua variação (ou desvio padrão). O objetivo então se torna encontrar o portfólio com o maior retorno (média) para cada valor de "risco aceitável".
+
+O espaço de possíveis portifólios fornecidas por este modelo pode ser visualizado pelo gráfico na Figura \ref{fig:mark}. A curva representa as portifólios com retorno esperado máximo para cada taxa de risco, dado que não existem ativos livres de risco no mercado. Às vezes, assume-se que alguns ativos são livres de risco, como títulos do governo, para simplificar o modelo. Nesses casos, a linha representa os portfólios ótimos.
+
+\begin{figure}
+  \centering
+    \includegraphics[width=0.5\textwidth]{img/mark.jpg}
+  \caption{Visualization of the possible portfolios in Modern Portfolio Theory}
+  \label{fig:mark}
+\end{figure}

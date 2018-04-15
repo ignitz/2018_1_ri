@@ -1,8 +1,16 @@
 # TP1 - RI
 
-
-First, copy the `lib` content to `/usr/lib` or `/lib` or call:
+To compile
 ```
-$ export LD_LIBRARY_PATH=lib:$LD_LIBRARY_PATH
-``` 
+$ make
+```
 
+To run
+```
+make run
+```
+
+To delete temp and collected files
+```
+make clean
+```

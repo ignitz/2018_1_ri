@@ -1,0 +1,28 @@
+ \section{Universal Portfolio}
+Dado que a MPT tenta maximizar o retorno esperado de um recurso usando análise de variância, ele usa dados passados do mercado de ações para definir risco e retorno. Prever é geralmente baseado em medições históricas, e muito frequentemente os valores esperados não consideram novas circunstâncias, que não existem nos dados passados. Essa é a Teoria do portfólio com estatísticas tradicionais, sem o uso da Teoria da Informação.
+
+A \emph{Universal Theory} explora o conceito de codificação universal, quando os dados passados são desconhecidos, para selecionar o melhor portfólio sem conhecimento prévio. O melhor portfólio é relativo a um padrão que fornece os retornos da compra e da manutenção de qualquer estoque específico, a média de todos os estoques e a média geométrica de todos os estoques. Este conceito é explorado em carteiras universais de horizontes finitos e livres.
+ 
+\subsection{Finite Horizon Universal Portfolio}
+Para um número finito de períodos de tempo n, existe uma relação de desempenho conhecida \cite{vercimakgambling}. Em outras palavras, ele obtém a estratégia pessimista (maxmin) de:
+
+\[\mathop {\max }\limits_{\hat b} \mathop {\min }\limits_{{x^n}} \frac{{{{\hat S}_n}({x^n})}}{{S_n^*({x^n})}} = {V_n}\]
+\[{V_n} = {\left[ {\mathop \sum \limits_{{n_1} +  \ldots  + {n_m} = n}^{} \left( {\begin{array}{*{20}{c}}
+n\\
+{{n_1},{n_2}, \ldots ,{n_m}}
+\end{array}} \right){2^{ - nH\left( {\frac{{{n_1}}}{n}, \ldots ,\frac{{{n_m}}}{n}} \right)}}} \right]^{ - 1}}\]
+
+Utilizando a aproximação de Stirling, mostra-se que $V_n$ é na ordem:
+ 
+\[O(V_{n} ) = n^{-\frac{m-1}{2}}\]
+
+It gives a useful approximate bound to compare a universal portfolio and a constant rebalanced portfolio.
+Dá uma aproximação útil para comparar um portfólio universal e um portfólio reequilibrado constante.
+
+\subsection{Horizon Free Universal Portfolio}
+Um \emph{Horizon Free Universal Portfolio} é um portfólio universal que não está restrito a um número específico de períodos $ n $. Uma vez que é um assunto crescente, ainda há muito a ser estudado, e não há retorno exato para um \emph{horizon free universal portfolio}.
+O limite inferior é adquirido usando uma função Dirichlet com $ \alpha = (0,5, 0,5) $ e o limite superior com portifólio constantemente reequilibrada usando a relação na estratégia anterior.
+
+\[\frac{{{{\hat S}_n}\left( {{x^n}} \right)}}{{{{\hat S}_n}\left( {{x^n}} \right)}} \ge \frac{1}{{2\sqrt {n + 1} }}\]
+
+Para todo $n$ e todas as ações subsequentes $x^n$.

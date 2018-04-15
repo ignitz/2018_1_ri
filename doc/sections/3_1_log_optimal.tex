@@ -1,0 +1,18 @@
+\subsection{The Log-optimal Portfolio}
+Um dos primeiros resultados teóricos da informação relacionados ao investimento e à teoria dos jogos é a Aposta Proporcional (também chamada de Kelly Betting) \cite{kelly1}. Em seu artigo original, Kelly mostrou que essa teoria era sólida para cenários de jogo, com resultados binários (ganhar / perder). Escolher o que as apostas para fazer em um cenário de jogo pode ser visto como um caso específico do problema de seleção de portfólio mais geral. Mais tarde, demonstrou-se que essa teoria ainda é válida nos casos não binários mais amplos.
+
+Como na Seção 2, aqui um investidor ainda procura maximizar seu retorno esperado sobre a riqueza investida. No entanto, os investidores geralmente não colocam investimentos e os removem no próximo período. Em vez disso, eles reinvestem seus ganhos, independentemente de o investimento ter pago ou não. Isso significa que o que está tentando maximizar é realmente a taxa de crescimento de seu investimento, que é a taxa em que sua riqueza cresce ao longo dos vários períodos. Kelly mostrou que a taxa de crescimento $ W(\bf{b}, F) $ de uma carteira de investimento $ \bf{b} $ dada uma distribuição de mercado $ F(\bf{x}) $ é:
+
+\[W({\bf{b}},F) = E\left({{{\log }}{{\bf{b}}^t}{\bf{X}}}\right)\]
+
+Quando o logaritmo de 2 é usado, o \emph{growth rate} de um portfólio é chamado \emph{doubling rate}, o que essencialmente nos diz o tempo que leva para um determinado portfólio duplicar em valor. Portanto, usando a definição de taxa de crescimento, o que um investidor deve fazer é encontrar o portfólio que maximiza essa taxa:
+
+\[{W^*}(F) = \mathop {\max }\limits_{\bf{b}} W({\bf{b}},F)\]
+
+Pode ser mostrado (sobre provas formais) que é igual a:
+
+\[{W^*}(F) = \mathop {\max }\limits_{\bf{b}} E(\log \bf{b}^t \bf{X})\]
+
+O que significa que, em vez de tentar maximizar o retorno esperado de suas riquezas, um investidor racional deve, em vez disso, maximizar o valor esperado do \emph{logaritmo} de suas riquezas. Isso também significa que eles devem investir (ou no caso de Kelly, fazer apostas) pesados pelo logaritmo de seus resultados esperados, não pelos próprios resultados.
+
+As portifólios de \emph{log-optimal} mostraram ser astimamente ótimas, o que significa no longo prazo (quando o número de períodos de investimento tende ao infinito), eles alcançam a taxa de crescimento máxima. Eles também mostraram ser competitivos otimizados. Isso significa que um investidor que investe usando um portfólio \emph{log-optimal} pode sempre desempenhar o mesmo ou superar um investidor usando uma portifólio casualmente escolhida, mas nunca pode executar abaixo deles.

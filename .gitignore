@@ -35,3 +35,14 @@ main
 output_file.txt
 unique_id_file.txt
 save_state.sav
+
+*.aux
+*.log
+*.toc
+*.bbl
+*.blg
+*.out
+*.pdf
+*.ps
+*.dvi
+make
