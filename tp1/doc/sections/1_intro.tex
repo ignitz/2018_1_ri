@@ -1,0 +1,28 @@
+\section{Introdução} O trabalho consiste em criar um crawler que coletará
+links (internos e externos) e criará um arquivo de dump contendo a url e a
+página em html conforme está na especificação.
+
+Alguns requisitos do crawler são:
+
+
+
+\begin{itemize}
+  \item{Formato do arquivo de dump:}
+
+  |||<url>|<conteúdo>|||<url>|<conteúdo>|||...
+
+  |||<url>|<conteúdo>|||
+
+
+  \item{Código em C++}
+  \item{Uso da biblioteca Chilkat é recomendado}
+  \item{Baixar páginas no domínio *.br}
+  \item{Coletar somente páginas HTML}
+  \item{Coletar páginas com no máximo 2 MB}
+  \item{Mínimo: 1 milhão de páginas}
+  \item{Máximo: 5 milhões de páginas}
+  \item{Comprimir o arquivo final no formato .tar}
+\end{itemize}
+
+Todos os requisitos foram atendidos com exceção do mínimo da
+coleção de páginas que será explicado a seguir.
