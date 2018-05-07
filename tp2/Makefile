@@ -13,9 +13,11 @@ all:
 
 # run this program
 run:
-	# @./$(BIN_NAME) html_pages.txt
-	# @./$(BIN_NAME) test.txt
 	@./$(BIN_NAME) ri_2018_collection.dat
+
+test:
+	@./$(BIN_NAME) html_pages.txt
 
 clean:
 	@$(RM) $(BIN_NAME)
+	@$(RM) *.index *.urllist

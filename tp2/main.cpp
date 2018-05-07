@@ -3,9 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include <algorithm>
-#include <boost/algorithm/string.hpp>
-#include <locale>
+// #include <algorithm>
 
 // #include <sstream>
 // #include <iterator>
@@ -14,8 +12,6 @@
 #include "gumbo.h"
 #include "utils.h"
 #include "term.h"
-
-std::vector<Term> create_vocabulary(std::vector<std::string> &);
 
 void check_if_in_eof(std::ifstream &in) {
   if (in.eof()) {
@@ -59,21 +55,28 @@ static std::string cleantext(GumboNode *node) {
   }
 }
 
-// need boost library
-std::vector<std::string> split_string(std::string text) {
-  std::vector<std::string> results;
-  std::string::iterator it;
-
-  std::string illegalChars = "\t\n-:.,;/[]{}()?!\"\'";
-  for (it = text.begin() ; it < text.end() ; ++it){
-      bool found = illegalChars.find(*it) != std::string::npos;
-      if(found){
-          *it = ' ';
+std::vector<Term> create_vocabulary(std::vector<std::string> &strings) {
+  std::vector<Term> vocabulary;
+  bool not_found;
+  for (const std::string &word : strings) {
+    if (word.length() > 0) {
+      size_t size = vocabulary.size();
+      size_t count_add = 0;
+      not_found = true;
+      for (size_t i = 0; i < size + count_add; i++) {
+        if (word.compare(vocabulary[i].get_word()) == 0) {
+          vocabulary[i].plus_one();
+          not_found = false;
+          break;
+        }
       }
+      if (not_found) {
+        vocabulary.push_back(Term(word));
+        count_add++;
+      }
+    }
   }
-
-  boost::split(results, text, [](char c) { return c == ' '; });
-  return std::move(results);
+  return vocabulary;
 }
 
 int create_inverted_index(int argc, char **argv) {
@@ -158,7 +161,7 @@ int create_inverted_index(int argc, char **argv) {
     position = in.tellg();
     if (position >= file_size - 1)
       break;
-    if (++count == 100) {
+    if (++count == 10) {
       break;
     }
   }
@@ -168,29 +171,6 @@ int create_inverted_index(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
-std::vector<Term> create_vocabulary(std::vector<std::string> &strings) {
-  std::vector<Term> vocabulary;
-  bool not_found;
-  for (const std::string &word : strings) {
-    if (word.length() > 0) {
-      size_t size = vocabulary.size();
-      size_t count_add = 0;
-      not_found = true;
-      for (size_t i = 0; i < size + count_add; i++) {
-        if (word.compare(vocabulary[i].get_word()) == 0) {
-          vocabulary[i].plus_one();
-          not_found = false;
-          break;
-        }
-      }
-      if (not_found) {
-        vocabulary.push_back(Term(word));
-        count_add++;
-      }
-    }
-  }
-  return vocabulary;
-}
 // int main(int argc, char **argv) {
 //   create_inverted_index(argc, argv);
 //   return 0;

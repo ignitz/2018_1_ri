@@ -14,3 +14,20 @@ std::string iso_8859_1_to_utf8(std::string &str) {
   }
   return strOut;
 }
+
+// need boost library
+std::vector<std::string> split_string(std::string text) {
+  std::vector<std::string> results;
+  std::string::iterator it;
+
+  std::string illegalChars = "\t\n-:.,;/[]{}()?!\"\'";
+  for (it = text.begin(); it < text.end(); ++it) {
+    bool found = illegalChars.find(*it) != std::string::npos;
+    if (found) {
+      *it = ' ';
+    }
+  }
+
+  boost::split(results, text, [](char c) { return c == ' '; });
+  return std::move(results);
+}
