@@ -1,4 +1,3 @@
-// Colorir letras. Testado apenas no Linux.
 #ifndef COLORS
 #define COLORS
 
@@ -11,4 +10,10 @@
 #define BOLD "\033[1m"
 #define UNDERLINE "\033[4m"
 
+#endif
+
+#ifndef _UTILS_
+#define _UTILS_
+#include <iostream>
+std::string iso_8859_1_to_utf8(std::string &str);
 #endif

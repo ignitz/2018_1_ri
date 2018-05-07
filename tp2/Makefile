@@ -4,7 +4,7 @@ CXX ?= g++
 SRC_EXT = cpp
 # LIBS = -lchilkat-9.5.0 -lresolv -lpthread
 FLAGS = -std=c++14 -Wall -Wextra -g -fpermissive
-#### END PROJECT SETTINGS ####
+### END PROJECT SETTINGS ####
 
 export LD_LIBRARY_PATH="/usr/local/lib"
 
@@ -13,7 +13,9 @@ all:
 
 # run this program
 run:
-	@./$(BIN_NAME)
+	# @./$(BIN_NAME) html_pages.txt
+	# @./$(BIN_NAME) test.txt
+	@./$(BIN_NAME) ri_2018_collection.dat
 
 clean:
 	@$(RM) $(BIN_NAME)
