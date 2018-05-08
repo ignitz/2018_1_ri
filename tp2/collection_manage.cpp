@@ -120,12 +120,13 @@ bool CollectionManager::read_exact_pages(size_t many_pages) {
 
   std::string url, content;
 
-  for (size_t document_id = 0; document_id < many_pages && !eof(); document_id++) {
+  for (size_t document_id = 0; document_id < many_pages && !eof();
+       document_id++) {
     url = read_url();
     position = file.tellg();
     content = read_content();
     pCollection->insert_doc(url, position);
-    test_gumbo(content, document_id);
+    get_terms(content, document_id);
     // std::cout << get_cleanText(content) << '\n';
     // std::cout << content << '\n';
   }
@@ -188,16 +189,3 @@ int main() {
 
   return 0;
 }
-
-// int main(int argc, char const *argv[]) {
-//   if (argc != 2) {
-//     std::cout << "Usage: " << argv[0] << " <html_pages>" << '\n';
-//   }
-//   CollectionManager manage(argv[1]);
-//   manage.open_file();
-//   while (!manage.eof()) {
-//     std::cout << WARNING << manage.read_url() << '\n';
-//     std::cout << BLUE << manage.read_content().substr(0,400) << ENDC << '\n';
-//   }
-//   return 0;
-// }

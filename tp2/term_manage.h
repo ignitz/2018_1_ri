@@ -1,10 +1,8 @@
 #ifndef _TERM_MANAGE_
 #define _TERM_MANAGE_
 
-#include <vector>
-
-#include "gumbo.h"
-#include "utils.h"
+// #include "utils.h"
+#include <iostream>
 
 typedef struct {
   size_t offset;
@@ -17,8 +15,5 @@ typedef struct {
   size_t position;
   std::string term;
 } Term;
-
-std::string get_cleanText(std::string html);
-void test_gumbo(std::string, size_t);
 
 #endif
