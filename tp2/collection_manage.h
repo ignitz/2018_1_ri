@@ -1,9 +1,9 @@
 #ifndef _COL_MANAGE_
 #define _COL_MANAGE_
 #include <iostream>
-#include <vector>
 
 #include "file_manage.h"
+#include "term_manage.h"
 #include "utils.h"
 
 class PointerCollection {
@@ -34,9 +34,9 @@ public:
   std::string read_content();
   bool eof();
   bool read_file();
+  bool read_exact_pages(size_t many_pages);
   size_t get_position_id(size_t id);
   size_t get_position_url(size_t id);
-
 };
 
 #endif

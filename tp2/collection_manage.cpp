@@ -107,6 +107,31 @@ bool CollectionManager::read_file() {
   return true;
 }
 
+/*
+ * DEBUG purpose
+ */
+bool CollectionManager::read_exact_pages(size_t many_pages) {
+  if (!file.is_open()) {
+    std::cout << FAIL << "File not opened" << ENDC << '\n';
+    exit(EXIT_FAILURE);
+  }
+
+  size_t position;
+
+  std::string url, content;
+
+  for (size_t i = 0; i < many_pages && !eof(); i++) {
+    url = read_url();
+    position = file.tellg();
+    content = read_content();
+    pCollection->insert_doc(url, position);
+    test_gumbo(content);
+    // std::cout << get_cleanText(content) << '\n';
+    // std::cout << content << '\n';
+  }
+  return true;
+}
+
 size_t CollectionManager::get_position_url(size_t id) {
   return std::move(this->pCollection->get_position_url(id));
 }
@@ -159,13 +184,7 @@ int main() {
   CollectionManager manage("html_pages.txt");
   manage.open_file();
   // manage.read_file();
-  {
-    std::cout << std::hex << manage.get_position_id(1) << '\n';
-    std::cout << std::hex << manage.get_position_url(1) << '\n';
-    std::cout << std::hex << manage.get_position_id(2) << '\n';
-    std::cout << std::hex << manage.get_position_url(2) << '\n';
-  }
-
+  manage.read_exact_pages(1);
 
   return 0;
 }

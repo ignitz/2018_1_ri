@@ -15,9 +15,7 @@ std::string iso_8859_1_to_utf8(std::string &str) {
   return strOut;
 }
 
-// need boost library
-std::vector<std::string> split_string(std::string text) {
-  std::vector<std::string> results;
+void remove_illegal_chars (std::string & text) {
   std::string::iterator it;
 
   std::string illegalChars = "\t\n-:.,;/[]{}()?!\"\'";
@@ -27,7 +25,11 @@ std::vector<std::string> split_string(std::string text) {
       *it = ' ';
     }
   }
+}
 
-  boost::split(results, text, [](char c) { return c == ' '; });
+// need boost library
+std::vector<std::string> split_string(std::string & text, char split) {
+  std::vector<std::string> results;
+  boost::split(results, text, [&split](char c) { return c == split; });
   return std::move(results);
 }
