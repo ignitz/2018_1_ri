@@ -21,21 +21,29 @@ static std::string cleantext(GumboNode *node) {
   }
 }
 
-static void walk_to_GumboNode(GumboNode *node) {
-  if (node->type == GUMBO_NODE_TEXT) {
-    std::string content = std::string(node->v.text.text);
+std::string get_cleanText(std::string html) {
+  GumboOutput *output = gumbo_parse(html.c_str());
+  html = cleantext(output->root);
+  gumbo_destroy_output(&kGumboDefaultOptions, output);
+  return std::move(html);
+};
 
-    std::cout << BLUE << node->v.text.start_pos.offset << '\t'
-              << content.length() << ENDC << '\n';
+static void get_terms_in_node(GumboNode *node, std::vector<Phrase> &phrases) {
+  if (node->type == GUMBO_NODE_TEXT) {
+    Phrase phrase;
+    std::string content = std::string(node->v.text.text);
+    phrase.offset = node->v.text.start_pos.offset;
     remove_illegal_chars(content);
-    std::cout << content << '\n';
+    phrase.length = content.length();
+    phrase.phrase = content;
+    phrases.push_back(std::move(phrase));
     return;
   } else if (node->type == GUMBO_NODE_ELEMENT &&
              node->v.element.tag != GUMBO_TAG_SCRIPT &&
              node->v.element.tag != GUMBO_TAG_STYLE) {
     GumboVector *children = &node->v.element.children;
     for (unsigned int i = 0; i < children->length; ++i) {
-      walk_to_GumboNode((GumboNode *)children->data[i]);
+      get_terms_in_node((GumboNode *)children->data[i], phrases);
     }
     return;
   } else {
@@ -43,16 +51,55 @@ static void walk_to_GumboNode(GumboNode *node) {
   }
 }
 
-std::string get_cleanText(std::string html) {
-  html = iso_8859_1_to_utf8(html);
+void test_gumbo(std::string html, size_t document_id) {
+  std::vector<Phrase> phrases;
+  std::vector<Term> terms;
   GumboOutput *output = gumbo_parse(html.c_str());
-  html = cleantext(output->root);
+  get_terms_in_node(output->root, phrases);
   gumbo_destroy_output(&kGumboDefaultOptions, output);
-  return std::move(html);
-};
+  // split_terms and save position
 
-void test_gumbo(std::string html) {
-  GumboOutput *output = gumbo_parse(html.c_str());
-  walk_to_GumboNode(output->root);
-  gumbo_destroy_output(&kGumboDefaultOptions, output);
+  int state;
+  std::string term;
+  for (auto &phrase : phrases) {
+    state = 0;
+    term = "";
+    for (size_t i = 0; i < phrase.length; i++) {
+      switch (state) {
+      case 0:
+        if (phrase.phrase[i] != ' ') {
+          term += phrase.phrase[i];
+          state = 1;
+        }
+        break;
+
+      case 1:
+        if (phrase.phrase[i] == ' ' && term.length() != 0) {
+          Term aux = {
+              document_id,                         // document_id
+              (phrase.offset + i - term.length()), // position
+              term,                                // term
+          };
+          terms.push_back(aux);
+          term = "";
+          state = 0;
+        } else {
+          term += phrase.phrase[i];
+        }
+        break;
+
+      default:
+        break;
+      }
+    }
+
+    if (state == 1) {
+      Term aux = {
+          document_id,                                     // document_id
+          (phrase.offset + phrase.length - term.length()), // position
+          term,                                            // term
+      };
+      terms.push_back(aux);
+    }
+  }
 }

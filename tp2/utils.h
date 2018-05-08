@@ -18,6 +18,8 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 
+#define ILLEGAL_CHARS "\t\n-:.,;/[]{}()?!\"\'©@"
+
 std::string iso_8859_1_to_utf8(std::string &str);
 void remove_illegal_chars (std::string & text);
 std::vector<std::string> split_string(std::string & text, char split);

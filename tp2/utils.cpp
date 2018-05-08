@@ -18,7 +18,7 @@ std::string iso_8859_1_to_utf8(std::string &str) {
 void remove_illegal_chars (std::string & text) {
   std::string::iterator it;
 
-  std::string illegalChars = "\t\n-:.,;/[]{}()?!\"\'";
+  std::string illegalChars = ILLEGAL_CHARS;
   for (it = text.begin(); it < text.end(); ++it) {
     bool found = illegalChars.find(*it) != std::string::npos;
     if (found) {
