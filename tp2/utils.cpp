@@ -107,6 +107,7 @@ std::vector<Term> split_terms(std::vector<Phrase> &phrases, size_t document_id) 
       case 1:
         if (phrase.phrase[i] == ' ' && term.length() != 0) {
           Term aux;
+          std::transform(term.begin(), term.end(), term.begin(), ::tolower);
           aux.document_id = document_id;
           aux.position = (phrase.offset + i - term.length());
           aux.term = term;
@@ -125,6 +126,7 @@ std::vector<Term> split_terms(std::vector<Phrase> &phrases, size_t document_id) 
 
     if (state == 1) {
       Term aux;
+      std::transform(term.begin(), term.end(), term.begin(), ::tolower);
       aux.document_id = document_id;
       aux.position = (phrase.offset + phrase.length - term.length());
       aux.term = term;
@@ -142,4 +144,16 @@ std::vector<Term> get_terms(std::string html, size_t document_id) {
   gumbo_destroy_output(&kGumboDefaultOptions, output);
 
   return std::move(split_terms(phrases, document_id));
+}
+
+void write_term(Term & term) {
+  std::string term_file_name = "terms/" + term.term;
+  std::fstream arq(term_file_name, std::ios::app);
+  if (!arq.is_open()) {
+    std::cout << FAIL << "Fail to open term " << term.term <<ENDC << '\n';
+    exit(EXIT_FAILURE);
+  }
+  arq.write((char*) & term.document_id, sizeof(size_t));
+  arq.write((char*) & term.position, sizeof(size_t));
+  arq.close();
 }

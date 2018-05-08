@@ -1,5 +1,3 @@
 #include "term_manage.h"
 
-void test() {
-  
-}
+void test(){};

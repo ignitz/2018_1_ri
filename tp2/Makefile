@@ -20,4 +20,4 @@ test:
 
 clean:
 	@$(RM) $(BIN_NAME)
-	@$(RM) *.index *.urllist
+	@$(RM) *.index *.urllist terms/*

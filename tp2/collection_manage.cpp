@@ -98,11 +98,18 @@ bool CollectionManager::read_file() {
 
   std::string url, content;
 
+  size_t document_id = 0;
+  // TODO: make save state
   while (!eof()) {
     url = read_url();
     position = file.tellg();
     content = read_content();
     pCollection->insert_doc(url, position);
+    std::vector<Term> terms = get_terms(content, document_id);
+    for (auto & each_term : terms) {
+      write_term(each_term);
+    }
+    document_id++;
   }
   return true;
 }
@@ -111,6 +118,7 @@ bool CollectionManager::read_file() {
  * DEBUG purpose
  */
 bool CollectionManager::read_exact_pages(size_t many_pages) {
+
   if (!file.is_open()) {
     std::cout << FAIL << "File not opened" << ENDC << '\n';
     exit(EXIT_FAILURE);
@@ -126,9 +134,10 @@ bool CollectionManager::read_exact_pages(size_t many_pages) {
     position = file.tellg();
     content = read_content();
     pCollection->insert_doc(url, position);
-    get_terms(content, document_id);
-    // std::cout << get_cleanText(content) << '\n';
-    // std::cout << content << '\n';
+    std::vector<Term> terms = get_terms(content, document_id);
+    for (auto & each_term : terms) {
+      write_term(each_term);
+    }
   }
   return true;
 }

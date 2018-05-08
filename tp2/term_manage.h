@@ -16,4 +16,13 @@ typedef struct {
   std::string term;
 } Term;
 
+// class TermFile : public RWFileManager {
+// private:
+//   /* data */
+//
+// public:
+//   TermFile (std::string filename);
+//   virtual ~TermFile ();
+// };
+
 #endif

@@ -15,10 +15,12 @@
 #ifndef _UTILS_
 #define _UTILS_
 
-#define ILLEGAL_CHARS "\t\n-:.,;/[]{}()?!\"\'©@&_*$#"
+#define ILLEGAL_CHARS "\t\n-:.,;/[]{}()?!\"\'©@&_*$#“”+-=<>%"
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include <boost/algorithm/string.hpp>
+#include <algorithm>
 
 #include "gumbo.h"
 #include "term_manage.h"
@@ -30,4 +32,5 @@ std::vector<std::string> split_string(std::string & text, char split);
 std::string get_cleanText(std::string html);
 
 std::vector<Term> get_terms(std::string, size_t document_id);
+void write_term(Term & term);
 #endif
