@@ -13,13 +13,6 @@
 #include "utils.h"
 #include "term.h"
 
-void check_if_in_eof(std::ifstream &in) {
-  if (in.eof()) {
-    std::cout << FAIL << "Unexpected EOF" << ENDC << '\n';
-    exit(EXIT_FAILURE);
-  }
-}
-
 std::string read_data(std::ifstream &in, size_t &block_size) {
   char *buffer = new char[block_size];
   size_t position = in.tellg();
@@ -119,7 +112,7 @@ int create_inverted_index(int argc, char **argv) {
     // Read URL
     block_size = 0;
     while (in.get() != int('|')) {
-      check_if_in_eof(in);
+      // check_if_in_eof(in);
       block_size++;
     }
 
@@ -132,7 +125,7 @@ int create_inverted_index(int argc, char **argv) {
     std::cout << WARNING << "Read HTML" << ENDC << '\n';
     block_size = 0;
     while (in.get() != int('|')) {
-      check_if_in_eof(in);
+      // check_if_in_eof(in);
       block_size++;
     }
 
@@ -150,7 +143,7 @@ int create_inverted_index(int argc, char **argv) {
     // read "|||"
     for (size_t i = 0; i < 3; i++) {
       in.get(c);
-      check_if_in_eof(in);
+      // check_if_in_eof(in);
       if (c != '|') {
         std::cout << FAIL << "File " << filename << " with bad format!" << ENDC
                   << '\n';

@@ -107,6 +107,14 @@ bool CollectionManager::read_file() {
   return true;
 }
 
+size_t CollectionManager::get_position_url(size_t id) {
+  return std::move(this->pCollection->get_position_url(id));
+}
+
+size_t CollectionManager::get_position_id(size_t id) {
+  return std::move(this->pCollection->get_position_id(id));
+}
+
 /********************************************************/
 PointerCollection::PointerCollection(std::string docIDs_name,
                                      std::string urlList_name) {
@@ -129,11 +137,35 @@ void PointerCollection::insert_doc(std::string url, size_t doc_position) {
   urlList->write_string(url);
 }
 
-int main(int argc, char const *argv[]) {
+size_t PointerCollection::get_position_url(size_t id) {
+  size_t response, position;
+  position = id * 2 * sizeof(size_t);
+  docIDs->set_position(position);
+  docIDs->read_block((char *)&response, sizeof(size_t));
+  return std::move(response);
+}
+
+size_t PointerCollection::get_position_id(size_t id) {
+  size_t response, position;
+  position = id * 2 * sizeof(size_t) + sizeof(size_t);
+  docIDs->set_position(position);
+  docIDs->read_block((char *)&response, sizeof(size_t));
+  return std::move(response);
+}
+
+/********************************************************/
+int main() {
 
   CollectionManager manage("html_pages.txt");
   manage.open_file();
-  manage.read_file();
+  // manage.read_file();
+  {
+    std::cout << std::hex << manage.get_position_id(1) << '\n';
+    std::cout << std::hex << manage.get_position_url(1) << '\n';
+    std::cout << std::hex << manage.get_position_id(2) << '\n';
+    std::cout << std::hex << manage.get_position_url(2) << '\n';
+  }
+
 
   return 0;
 }

@@ -23,22 +23,23 @@ bool FileManager::close_file() {
   return file.is_open();
 }
 
-char * FileManager::read_block(size_t block_size) {
-  char *buffer = new char[block_size];
-  // file.seekg(position - block_size - 1);
-  file.read(buffer, block_size);
-
-  return buffer;
-}
-
 size_t FileManager::get_position() {
   size_t position = file.tellg();
   return position;
 }
 
+bool FileManager::set_position(size_t position) {
+  file.seekg(position);
+  size_t check = file.tellg();
+  return check <= size ? true : false;
+}
+
+void FileManager::read_block(char *buffer, size_t block_size) {
+  file.read(buffer, block_size);
+}
+
 /**********************************************/
-RWFileManager::RWFileManager(std::string filename)
-    : FileManager(filename) {}
+RWFileManager::RWFileManager(std::string filename) : FileManager(filename) {}
 
 RWFileManager::~RWFileManager() { file.close(); }
 

@@ -8,22 +8,25 @@
 
 class PointerCollection {
 private:
-  RWFileManager * docIDs;
-  RWFileManager * urlList;
+  RWFileManager *docIDs;
+  RWFileManager *urlList;
 
 public:
-  PointerCollection (std::string docIDs_name, std::string urlList_name);
-  virtual ~PointerCollection ();
+  PointerCollection(std::string docIDs_name, std::string urlList_name);
+  virtual ~PointerCollection();
   void insert_doc(std::string url, size_t doc_position);
+  size_t get_position_id(size_t id);
+  size_t get_position_url(size_t id);
 };
 
 /**********************************************/
 class CollectionManager : public FileManager {
 private:
-  PointerCollection * pCollection;
+  PointerCollection *pCollection;
+
 public:
-  CollectionManager (std::string filename);
-  virtual ~CollectionManager ();
+  CollectionManager(std::string filename);
+  virtual ~CollectionManager();
 
   bool open_file();
   std::string read_block(size_t block_size);
@@ -31,6 +34,9 @@ public:
   std::string read_content();
   bool eof();
   bool read_file();
+  size_t get_position_id(size_t id);
+  size_t get_position_url(size_t id);
+
 };
 
 #endif
