@@ -6,10 +6,12 @@ CollectionManager::CollectionManager(std::string filename)
   std::string urlList_file_name = filename + ".urllist";
 
   pCollection = new PointerCollection(index_file_name, urlList_file_name);
+  pTermhash = new TermHash('s');
 }
 
 CollectionManager::~CollectionManager() {
   delete pCollection;
+  delete pTermhash;
   this->FileManager::~FileManager();
 }
 
@@ -136,10 +138,18 @@ bool CollectionManager::read_exact_pages(size_t many_pages) {
     pCollection->insert_doc(url, position);
     std::vector<Term> terms = get_terms(content, document_id);
     for (auto & each_term : terms) {
-      write_term(each_term);
+      this->pTermhash->add_term(each_term);
     }
   }
   return true;
+}
+
+void CollectionManager::print_all_terms() {
+  size_t many_terms = this->pTermhash->get_many_terms();
+
+  for (size_t i = 0; i < many_terms; i++) {
+    std::cout << this->get_term_by_id(i) << '\n';
+  }
 }
 
 size_t CollectionManager::get_position_url(size_t id) {
@@ -149,6 +159,10 @@ size_t CollectionManager::get_position_url(size_t id) {
 size_t CollectionManager::get_position_id(size_t id) {
   return std::move(this->pCollection->get_position_id(id));
 }
+
+std::string CollectionManager::get_term_by_id(size_t id){
+  return std::move(this->pTermhash->get_term_by_id(id));
+};
 
 /********************************************************/
 PointerCollection::PointerCollection(std::string docIDs_name,
@@ -190,11 +204,11 @@ size_t PointerCollection::get_position_id(size_t id) {
 
 /********************************************************/
 int main() {
-
   CollectionManager manage("html_pages.txt");
   manage.open_file();
   // manage.read_file();
   manage.read_exact_pages(100);
+  manage.print_all_terms();
 
   return 0;
 }

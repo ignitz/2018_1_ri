@@ -13,6 +13,7 @@ all:
 
 # run this program
 run:
+	@-rm -rf terms/*
 	@./$(BIN_NAME) ri_2018_collection.dat
 
 test:
@@ -20,4 +21,4 @@ test:
 
 clean:
 	@$(RM) $(BIN_NAME)
-	@$(RM) *.index *.urllist terms/*
+	@$(RM) *.index *.urllist terms/* hash_table.tbl terms.dump

@@ -4,6 +4,7 @@
 
 #include "file_manage.h"
 #include "term_manage.h"
+#include "term.h"
 #include "utils.h"
 
 class PointerCollection {
@@ -23,6 +24,7 @@ public:
 class CollectionManager : public FileManager {
 private:
   PointerCollection *pCollection;
+  TermHash *pTermhash;
 
 public:
   CollectionManager(std::string filename);
@@ -35,8 +37,10 @@ public:
   bool eof();
   bool read_file();
   bool read_exact_pages(size_t many_pages);
+  void print_all_terms();
   size_t get_position_id(size_t id);
   size_t get_position_url(size_t id);
+  std::string get_term_by_id(size_t id);
 };
 
 #endif

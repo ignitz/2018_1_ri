@@ -157,3 +157,10 @@ void write_term(Term & term) {
   arq.write((char*) & term.position, sizeof(size_t));
   arq.close();
 }
+
+bool check_if_file_exist(std::string file_name) {
+  std::ifstream file(file_name, std::ios::in);
+  bool check = file.is_open() ? true : false;
+  file.close();
+  return check;
+}

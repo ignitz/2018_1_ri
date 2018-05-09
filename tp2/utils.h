@@ -16,6 +16,8 @@
 #define _UTILS_
 
 #define ILLEGAL_CHARS "\t\n-:.,;/[]{}()?!\"\'©@&_*$#“”+-=<>%"
+#include "term.h"
+
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -23,7 +25,6 @@
 #include <algorithm>
 
 #include "gumbo.h"
-#include "term_manage.h"
 
 std::string iso_8859_1_to_utf8(std::string &str);
 void remove_illegal_chars (std::string & text);
@@ -33,4 +34,6 @@ std::string get_cleanText(std::string html);
 
 std::vector<Term> get_terms(std::string, size_t document_id);
 void write_term(Term & term);
+
+bool check_if_file_exist(std::string file_name);
 #endif
