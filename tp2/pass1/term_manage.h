@@ -15,7 +15,9 @@
 struct HashBlock {
   size_t hash_id;
   size_t position;
-  size_t size;
+  size_t chars_length;
+  size_t pointer_to_term; // Utility to next pass
+  size_t freq;
 };
 
 class TermHash {

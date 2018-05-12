@@ -7,9 +7,19 @@ CollectionManager::CollectionManager(std::string filename)
 
   pCollection = new PointerCollection(index_file_name, urlList_file_name);
   pTermhash = new TermHash('s');
+  logFile.open("log.txt", std::ios::out);
+
+  std::string string_log;
+  string_log = "/**********************/\nInitiating collection of terms\n";
+  string_log += "Collection: " + filename +
+                "\n\tindex file: " + index_file_name +
+                "\n\turl list file: " + urlList_file_name + "\n";
+  logFile << string_log;
+  logFile.close();
 }
 
 CollectionManager::~CollectionManager() {
+  // logFile.close();
   delete pCollection;
   delete pTermhash;
   this->FileManager::~FileManager();
@@ -97,17 +107,21 @@ bool CollectionManager::read_file() {
   }
 
   size_t position;
+  std::chrono::duration<double> elapsed;
 
   std::string url, content;
 
   size_t document_id = 0;
+  size_t last_many_terms = 0;
   // TODO: make save state
-  std::cout << get_size() << '\n';
+  auto start_global_time = std::chrono::high_resolution_clock::now();
   while (!eof()) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     std::cout << BOLD << "Progress: " << ' '
-              << (100 * get_position() / get_size()) << "%\t" < < < <
-        BLUE << "Position: " << get_position()
-             << "\tDocument ID: " << document_id << ENDC << '\n';
+              << (100 * get_position() / get_size()) << "%\t" << BLUE
+              << "Position: " << get_position()
+              << "\tDocument ID: " << document_id << ENDC << '\n';
     url = read_url();
     position = get_position();
     content = read_content();
@@ -116,8 +130,31 @@ bool CollectionManager::read_file() {
     for (auto &each_term : terms) {
       this->pTermhash->add_term(each_term);
     }
+
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    elapsed = finish_time - start_time;
+
+    last_many_terms = this->pTermhash->get_many_terms() - last_many_terms;
+
+    std::string string_log =
+        std::to_string(elapsed.count()) + " seconds to read document " +
+        std::to_string(document_id) + '\n' + '\t' +
+        std::to_string(last_many_terms) + " terms added.\n";
+
+    std::cout << GREEN << string_log << ENDC << '\n';
+
+    this->write_to_log(string_log);
+
     document_id++;
   }
+  auto finish_global_time = std::chrono::high_resolution_clock::now();
+  elapsed = finish_global_time - start_global_time;
+  std::string result_string =
+      "\nCollection read takes:\n" + std::to_string(elapsed.count()) +
+      " seconds to finish\n" + "There are " +
+      std::to_string(this->pTermhash->get_many_terms()) + "terms.\n";
+  std::cout << GREEN << result_string << ENDC << '\n';
+  this->write_to_log(result_string);
   return true;
 }
 
@@ -169,6 +206,12 @@ std::string CollectionManager::get_term_by_id(size_t id) {
   return std::move(this->pTermhash->get_term_by_id(id));
 };
 
+void CollectionManager::write_to_log(std::string string_log) {
+  logFile.open("log.txt", std::ios::app);
+  logFile << string_log << '\n';
+  logFile.close();
+};
+
 /********************************************************/
 PointerCollection::PointerCollection(std::string docIDs_name,
                                      std::string urlList_name) {
@@ -208,12 +251,3 @@ size_t PointerCollection::get_position_id(size_t id) {
 }
 
 /********************************************************/
-int main() {
-  CollectionManager manage("html_pages.txt");
-  manage.open_file();
-  manage.read_file();
-  // manage.read_exact_pages(100);
-  manage.print_all_terms();
-
-  return 0;
-}

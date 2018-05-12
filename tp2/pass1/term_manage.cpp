@@ -3,16 +3,20 @@
 TermHash::TermHash(char mode) {
   switch (mode) {
   case 's':
-    if (!check_if_file_exist(HASHTABLE_FILENAME)) {
+    // if (!check_if_file_exist(HASHTABLE_FILENAME)) {
+    {
       std::fstream f(HASHTABLE_FILENAME, std::ios::out | std::ios::binary);
       f.close();
     }
+    // }
     hash_table.open(HASHTABLE_FILENAME, std::ios::in | std::ios::out | std::ios::binary);
 
-    if (!check_if_file_exist(DUMPTERM_FILENAME)) {
+    // if (!check_if_file_exist(DUMPTERM_FILENAME)) {
+    {
       std::fstream f(DUMPTERM_FILENAME, std::ios::out | std::ios::binary);
       f.close();
     }
+    // }
     terms_dump.open(DUMPTERM_FILENAME, std::ios::in | std::ios::out | std::ios::binary);
 
     break;
@@ -50,7 +54,7 @@ std::string TermHash::get_term_by_id(size_t id) {
   size_t hash_length = hash_table.tellg();
   hash_table.seekg(0, std::ios::beg);
 
-  hash_length /= (sizeof(size_t) * 3);
+  hash_length /= sizeof(HashBlock);
 
   size_t i = 0;
 
@@ -67,9 +71,9 @@ std::string TermHash::get_term_by_id(size_t id) {
 
   terms_dump.seekg(aux_block.position, std::ios::beg);
 
-  char *buffer = new char[aux_block.size*sizeof(char)];
-  terms_dump.read(buffer, aux_block.size*sizeof(char));
-  std::string response(buffer, aux_block.size);
+  char *buffer = new char[aux_block.chars_length*sizeof(char)];
+  terms_dump.read(buffer, aux_block.chars_length*sizeof(char));
+  std::string response(buffer, aux_block.chars_length);
   delete[] buffer;
 
   return std::move(response);
@@ -80,6 +84,7 @@ void TermHash::add_term(Term &term) {
   std::string strTerm = term.term;
 
   HashBlock aux_block;
+  size_t dummy;
 
   // TODO: o(n)... weell need binary search?
   hash_table.seekg(0, std::ios::end);
@@ -92,10 +97,18 @@ void TermHash::add_term(Term &term) {
 
   for (size_t i = 0; i < hash_length; i++) {
     hash_table.read((char *) &aux_block, sizeof(HashBlock));
-    char *buffer = new char[aux_block.size*sizeof(char)];
-    terms_dump.read(buffer, aux_block.size*sizeof(char));
+    char *buffer = new char[aux_block.chars_length*sizeof(char)];
+    terms_dump.read(buffer, aux_block.chars_length*sizeof(char));
     // if exists then insert in term files
-    if (std::string(buffer, aux_block.size).compare(strTerm) == 0) {
+    if (std::string(buffer, aux_block.chars_length).compare(strTerm) == 0) {
+      aux_block.freq++;
+      dummy = hash_table.tellg();
+      // hash_table.seekg(dummy - sizeof(HashBlock));
+      // hash_table.write((char *) & aux_block, sizeof(HashBlock));
+      // Desempenho
+      hash_table.seekg(dummy - sizeof(size_t));
+      hash_table.write((char *) & aux_block.freq, sizeof(size_t));
+
       aux_file.open("terms/" +
                         std::to_string((aux_block.hash_id / MANY_ON_DAT_BLOCK)),
                     std::ios::app | std::ios::binary);
@@ -118,10 +131,12 @@ void TermHash::add_term(Term &term) {
   size_t position = terms_dump.tellg();
   aux_block.hash_id = hash_length;
   aux_block.position = position;
-  aux_block.size = term.term.length();
+  aux_block.chars_length = term.term.length();
+  aux_block.pointer_to_term = 0;
+  aux_block.freq = 1;
   hash_table.write((char *) & aux_block, sizeof(HashBlock));
 
-  terms_dump.write(term.term.c_str(), aux_block.size);
+  terms_dump.write(term.term.c_str(), aux_block.chars_length);
 
   aux_file.open("terms/" +
                     std::to_string((aux_block.hash_id / MANY_ON_DAT_BLOCK)),

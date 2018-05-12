@@ -1,6 +1,7 @@
 #ifndef _COL_MANAGE_
 #define _COL_MANAGE_
 #include <iostream>
+#include <chrono>
 
 #include "file_manage.h"
 #include "term_manage.h"
@@ -25,6 +26,7 @@ class CollectionManager : public FileManager {
 private:
   PointerCollection *pCollection;
   TermHash *pTermhash;
+  std::fstream logFile;
 
 public:
   CollectionManager(std::string filename);
@@ -41,6 +43,7 @@ public:
   size_t get_position_id(size_t id);
   size_t get_position_url(size_t id);
   std::string get_term_by_id(size_t id);
+  void write_to_log(std::string);
 };
 
 #endif

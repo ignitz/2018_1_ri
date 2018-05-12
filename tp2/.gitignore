@@ -1,3 +1,6 @@
 *.index
 *.urllist
 terms
+*.tbl
+*.dump
+*.out
