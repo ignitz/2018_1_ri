@@ -9,7 +9,7 @@ FLAGS = -std=c++14 -Wall -Wextra -g -fpermissive
 export LD_LIBRARY_PATH="/usr/local/lib"
 
 all:
-	@$(CXX) *.$(SRC_EXT) -o $(BIN_NAME) $(FLAGS) $(shell pkg-config --cflags --libs gumbo)
+	@$(CXX) pass1/*.$(SRC_EXT) -o $(BIN_NAME) $(FLAGS) $(shell pkg-config --cflags --libs gumbo)
 
 # run this program
 run:
@@ -17,6 +17,7 @@ run:
 	@./$(BIN_NAME) ri_2018_collection.dat
 
 test:
+	@-rm -rf terms/*
 	@./$(BIN_NAME) html_pages.txt
 
 clean:

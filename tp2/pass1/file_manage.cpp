@@ -34,6 +34,10 @@ bool FileManager::set_position(size_t position) {
   return check <= size ? true : false;
 }
 
+size_t FileManager::get_size() {
+  return size;
+}
+
 void FileManager::read_block(char *buffer, size_t block_size) {
   file.read(buffer, block_size);
 }

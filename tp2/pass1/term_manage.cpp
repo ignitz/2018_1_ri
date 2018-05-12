@@ -144,7 +144,7 @@ size_t TermHash::get_many_terms() {
   size_t hash_length = hash_table.tellg();
   hash_table.seekg(position, std::ios::beg);
   hash_length /= sizeof(HashBlock);
-  return std::move(hash_length);
+  return hash_length;
 }
 
 // int main(int argc, char const *argv[]) {

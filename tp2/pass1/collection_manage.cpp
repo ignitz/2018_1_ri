@@ -102,14 +102,19 @@ bool CollectionManager::read_file() {
 
   size_t document_id = 0;
   // TODO: make save state
+  std::cout << get_size() << '\n';
   while (!eof()) {
+    std::cout << BOLD << "Progress: " << ' '
+              << (100 * get_position() / get_size()) << "%\t" < < < <
+        BLUE << "Position: " << get_position()
+             << "\tDocument ID: " << document_id << ENDC << '\n';
     url = read_url();
-    position = file.tellg();
+    position = get_position();
     content = read_content();
     pCollection->insert_doc(url, position);
     std::vector<Term> terms = get_terms(content, document_id);
-    for (auto & each_term : terms) {
-      write_term(each_term);
+    for (auto &each_term : terms) {
+      this->pTermhash->add_term(each_term);
     }
     document_id++;
   }
@@ -137,7 +142,7 @@ bool CollectionManager::read_exact_pages(size_t many_pages) {
     content = read_content();
     pCollection->insert_doc(url, position);
     std::vector<Term> terms = get_terms(content, document_id);
-    for (auto & each_term : terms) {
+    for (auto &each_term : terms) {
       this->pTermhash->add_term(each_term);
     }
   }
@@ -160,7 +165,7 @@ size_t CollectionManager::get_position_id(size_t id) {
   return std::move(this->pCollection->get_position_id(id));
 }
 
-std::string CollectionManager::get_term_by_id(size_t id){
+std::string CollectionManager::get_term_by_id(size_t id) {
   return std::move(this->pTermhash->get_term_by_id(id));
 };
 
@@ -206,8 +211,8 @@ size_t PointerCollection::get_position_id(size_t id) {
 int main() {
   CollectionManager manage("html_pages.txt");
   manage.open_file();
-  // manage.read_file();
-  manage.read_exact_pages(100);
+  manage.read_file();
+  // manage.read_exact_pages(100);
   manage.print_all_terms();
 
   return 0;

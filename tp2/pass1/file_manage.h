@@ -19,6 +19,7 @@ public:
   bool close_file();
   size_t get_position();
   bool set_position(size_t);
+  size_t get_size();
   void read_block(char * buffer, size_t block_size);
 };
 

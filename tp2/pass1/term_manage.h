@@ -3,7 +3,7 @@
 
 #define HASHTABLE_FILENAME "hash_table.tbl"
 #define DUMPTERM_FILENAME "terms.dump"
-#define MANY_ON_DAT_BLOCK 100
+#define MANY_ON_DAT_BLOCK 10000
 
 // #include "utils.h"
 #include <iostream>
