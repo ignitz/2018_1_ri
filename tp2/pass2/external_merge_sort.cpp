@@ -5,7 +5,18 @@ template <class BlockType>
 void merge(std::fstream &file, size_t l, size_t m, size_t r, bool (*)(BlockType&, BlockType&));
 
 bool orderByHashID(TermElem & aux_1, TermElem & aux_2) {
-  return (aux_1.hash_id <= aux_2.hash_id);
+  if (aux_1.hash_id < aux_2.hash_id) {
+    return true;
+  }
+  else if (aux_1.hash_id == aux_2.hash_id) {
+    if (aux_1.document_id < aux_2.document_id) {
+      return true;
+    } else if(aux_1.document_id == aux_2.document_id) {
+      if (aux_1.position < aux_2.position)
+          return true;
+    }
+  }
+  return false;
 }
 
 bool orderByName(HashBlock & aux_1, HashBlock & aux_2) {

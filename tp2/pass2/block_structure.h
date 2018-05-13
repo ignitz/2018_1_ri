@@ -2,6 +2,9 @@
 #define _BLK_STRUCT_
 #include <iostream>
 
+#define HASHTABLE_FILENAME "hash_table.tbl"
+#define DUMPTERM_FILENAME "terms.dump"
+
 struct HashBlock {
   size_t hash_id;
   size_t position;

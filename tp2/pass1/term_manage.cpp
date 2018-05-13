@@ -84,7 +84,6 @@ void TermHash::add_term(Term &term) {
   std::string strTerm = term.term;
 
   HashBlock aux_block;
-  size_t dummy;
 
   // TODO: o(n)... weell need binary search?
   hash_table.seekg(0, std::ios::end);
@@ -101,14 +100,7 @@ void TermHash::add_term(Term &term) {
     terms_dump.read(buffer, aux_block.chars_length*sizeof(char));
     // if exists then insert in term files
     if (std::string(buffer, aux_block.chars_length).compare(strTerm) == 0) {
-      aux_block.freq++;
-      dummy = hash_table.tellg();
-      // hash_table.seekg(dummy - sizeof(HashBlock));
-      // hash_table.write((char *) & aux_block, sizeof(HashBlock));
-      // Desempenho
-      hash_table.seekg(dummy - sizeof(size_t));
-      hash_table.write((char *) & aux_block.freq, sizeof(size_t));
-
+      delete[] buffer;
       aux_file.open("terms/" +
                         std::to_string((aux_block.hash_id / MANY_ON_DAT_BLOCK)),
                     std::ios::app | std::ios::binary);
@@ -116,13 +108,17 @@ void TermHash::add_term(Term &term) {
         std::cerr << "corre negada" << '\n';
         exit(EXIT_FAILURE);
       }
+      // if (aux_block.hash_id == 0 && term.document_id == 0 && term.position ==
+      // 0x3B2E) {
+      //   std::cout << "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2E 3B
+      //   00 00 00 00 00 00" << '\n';
+      // }
       aux_file.write((char *)&aux_block.hash_id, sizeof(size_t));
       aux_file.write((char *)&term.document_id, sizeof(size_t));
       aux_file.write((char *)&term.position, sizeof(size_t));
       aux_file.close();
       return;
     };
-
     delete[] buffer;
   }
 

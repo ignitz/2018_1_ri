@@ -1,9 +1,6 @@
 #ifndef _EXTERNAL_MERGE_SORT_
 #define _EXTERNAL_MERGE_SORT_
 
-#define HASHTABLE_FILENAME "hash_table.tbl"
-#define DUMPTERM_FILENAME "terms.dump"
-
 #include "block_structure.h"
 // #include "terms_table.h"
 #include <fstream>
