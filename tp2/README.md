@@ -109,3 +109,21 @@ será ordenado nestes arquivos.
 Assim, seguindo a ideia anterior, basta agora ordernar mas preocupando em utilizar
 uma ordenação estável. E como pedido terá que ser uma ordenação externa.
 Para testes será uma ordenação interna.
+
+## Ordenação
+
+### Merge Sort Externo
+
+O(n log(n))
+
+Lembrando que cada bloco de termo tem tamanho de 24 bytes.
+
+| Bytes | Blocos |Tempo |
+| :------- | :------- | :------- |
+| 25790232 | 1074593 | 117.857 seconds |
+|  2747616 | 114484 | 9.77569 seconds |
+|  1552728 | 64697 | 6.3397 seconds |
+|   680808 | 28367 | 1.99901 seconds |
+|   475200 | 19800 | 1.49599 seconds |
+|   395712 | 16488 | 0.920757 seconds |
+|    31848 | 1327 | 0.0907093 seconds |
