@@ -134,13 +134,15 @@ bool CollectionManager::read_file() {
     auto finish_time = std::chrono::high_resolution_clock::now();
     elapsed = finish_time - start_time;
 
-    last_many_terms = this->pTermhash->get_many_terms() - last_many_terms;
 
     std::string string_log =
         std::to_string(elapsed.count()) + " seconds to read document " +
         std::to_string(document_id) + '\n' + '\t' +
-        std::to_string(last_many_terms) + " terms added.\n";
+        std::to_string(this->pTermhash->get_many_terms() - last_many_terms) +
+        " terms added.\n";
 
+    last_many_terms = this->pTermhash->get_many_terms();
+    
     std::cout << GREEN << string_log << ENDC << '\n';
 
     this->write_to_log(string_log);
@@ -152,7 +154,7 @@ bool CollectionManager::read_file() {
   std::string result_string =
       "\nCollection read takes:\n" + std::to_string(elapsed.count()) +
       " seconds to finish\n" + "There are " +
-      std::to_string(this->pTermhash->get_many_terms()) + "terms.\n";
+      std::to_string(this->pTermhash->get_many_terms()) + " terms.\n";
   std::cout << GREEN << result_string << ENDC << '\n';
   this->write_to_log(result_string);
   return true;

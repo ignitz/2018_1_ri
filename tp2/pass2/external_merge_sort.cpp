@@ -2,25 +2,25 @@
 // #include <chrono>
 
 template <class BlockType>
-void merge(std::fstream &file, size_t l, size_t m, size_t r, bool (*)(BlockType&, BlockType&));
+void merge(std::fstream &file, size_t l, size_t m, size_t r,
+           bool (*)(BlockType &, BlockType &));
 
-bool orderByHashID(TermElem & aux_1, TermElem & aux_2) {
+bool orderByHashID(TermElem &aux_1, TermElem &aux_2) {
   if (aux_1.hash_id < aux_2.hash_id) {
     return true;
-  }
-  else if (aux_1.hash_id == aux_2.hash_id) {
+  } else if (aux_1.hash_id == aux_2.hash_id) {
     if (aux_1.document_id < aux_2.document_id) {
       return true;
-    } else if(aux_1.document_id == aux_2.document_id) {
+    } else if (aux_1.document_id == aux_2.document_id) {
       if (aux_1.position < aux_2.position)
-          return true;
+        return true;
     }
   }
   return false;
 }
 
-bool orderByName(HashBlock & aux_1, HashBlock & aux_2) {
-  char * buffer;
+bool orderByName(HashBlock &aux_1, HashBlock &aux_2) {
+  char *buffer;
 
   std::fstream f(DUMPTERM_FILENAME, std::ios::in | std::ios::binary);
   if (!f.is_open()) {
@@ -50,14 +50,17 @@ bool orderByName(HashBlock & aux_1, HashBlock & aux_2) {
   return (string1.compare(string2) <= 0);
 }
 
-int min(size_t x, size_t y) { return (x < y) ? x : y; }
+inline size_t min(size_t x, size_t y) { return (x < y) ? x : y; }
 
 void mergeSort_TermElem(std::fstream &file) {
   size_t n;
   file.seekg(0, std::ios::end);
   n = file.tellg();
+  std::cout << n / 1048576 << " MB" << '\t' << n / 1024 << " KB" << '\t' << n
+            << " bytes\n";
+
   if ((n % sizeof(TermElem)) != 0) {
-    std::cerr << "Wrong file size!" << '\n';
+    std::cerr << "Wrong file size in term element!" << '\n';
     exit(EXIT_FAILURE);
   }
   n /= sizeof(TermElem);
@@ -89,7 +92,7 @@ void mergeSort_HashTable(std::fstream &file) {
   file.seekg(0, std::ios::end);
   n = file.tellg();
   if ((n % sizeof(HashBlock)) != 0) {
-    std::cerr << "Wrong file size!" << '\n';
+    std::cerr << "Wrong file size in Hash Table!" << '\n';
     exit(EXIT_FAILURE);
   }
   n /= sizeof(HashBlock);
@@ -117,7 +120,8 @@ void mergeSort_HashTable(std::fstream &file) {
 }
 
 template <class BlockType>
-void merge(std::fstream &file, size_t l, size_t m, size_t r, bool (* orderby)(BlockType&, BlockType&)) {
+void merge(std::fstream &file, size_t l, size_t m, size_t r,
+           bool (*orderby)(BlockType &, BlockType &)) {
   std::fstream L;
   std::fstream R;
 

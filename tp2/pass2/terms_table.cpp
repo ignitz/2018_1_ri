@@ -96,7 +96,7 @@ void concate_terms(){
 
   std::fstream hash_table(HASHTABLE_FILENAME, std::ios::in | std::ios::out | std::ios::binary);
   auto sort_hash_start_time = std::chrono::high_resolution_clock::now();
-  mergeSort_TermElem(hash_table);
+  mergeSort_HashTable(hash_table);
   auto sort_hash_end_time = std::chrono::high_resolution_clock::now();
   elapsed = sort_hash_end_time - sort_hash_start_time;
   std::cout << "Time elapsed to sort hash table file was " << std::to_string(elapsed.count()) << " seconds\n";
