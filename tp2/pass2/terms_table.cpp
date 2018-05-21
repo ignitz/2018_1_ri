@@ -1,7 +1,7 @@
 #include "terms_table.h"
 
 void write_single_term_to_unique_file(std::fstream & file_term) {
-  std::fstream terms_index("terms.index", std::ios::out | std::ios::app | std::ios::binary);
+  std::fstream terms_index(TERMS_INDEX, std::ios::out | std::ios::app | std::ios::binary);
 
   TermElem term_element;
   size_t many_terms;
@@ -57,7 +57,7 @@ void concate_terms(){
 
   auto concat_start_time = std::chrono::high_resolution_clock::now();
 
-  std::fstream terms_index("terms.index", std::ios::out | std::ios::binary);
+  std::fstream terms_index(TERMS_INDEX, std::ios::out | std::ios::binary);
   terms_index.close();
 
   std::chrono::duration<double> elapsed;
